@@ -15,7 +15,7 @@ export default async function AgendarPage({ searchParams }) {
   return (
     <>
       <Header />
-      <main>
+      <main className="header-offset">
         <BookingFlow services={services} initialServiceSlug={initialServiceSlug} />
       </main>
       <Footer />

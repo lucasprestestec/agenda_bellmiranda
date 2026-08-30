@@ -20,7 +20,7 @@ export default async function HomePage() {
   const services = await listActiveServices();
   return (
     <>
-      <Header />
+      <Header overlay />
       <main>
         <Hero />
         <Portfolio />

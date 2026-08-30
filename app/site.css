@@ -1,0 +1,32 @@
+/* Photography is declared here (never in JS strings) so every reference is a
+   real CSS url() the bundler/deploy can resolve. */
+.ph{background-size:cover;background-position:center;background-repeat:no-repeat}
+.ph-hero{background-image:url("/assets/photo-hero-hands.png")}
+.ph-portrait{background-image:url("/assets/photo-portrait-bell.png")}
+.ph-booking{background-image:url("/assets/photo-booking-hands.png")}
+.ph-w1{background-image:url("/assets/photo-work-01.png")}
+.ph-w2{background-image:url("/assets/photo-work-02.png")}
+.ph-w3{background-image:url("/assets/photo-work-03.png")}
+.ph-w4{background-image:url("/assets/photo-work-04.png")}
+.ph-w5{background-image:url("/assets/photo-work-05.png")}
+.ph-texture{background-image:url("/assets/texture-blush-watercolor.png");background-size:contain;background-position:left bottom;background-repeat:no-repeat}
+
+html,body{overflow-x:hidden;max-width:100%}
+img,svg,video{max-width:100%}
+button{font:inherit}
+a{color:var(--cocoa-800)}
+a:hover{color:var(--rose-600)}
+.bm-scroller{display:flex;gap:12px;width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.bm-scroller::-webkit-scrollbar{display:none}
+.bm-scroller>*{scroll-snap-align:start;flex:0 0 auto}
+@media (max-width:860px){
+  h1,h2,h3{text-wrap:pretty}
+  section{min-width:0}
+}
+
+/* Fixed header offset for pages without a full-bleed hero underneath it */
+.header-offset{padding-top:72px}
+@media (min-width:861px){.header-offset{padding-top:92px}}
+
+.services-grid{grid-template-columns:1fr}
+@media (min-width:861px){.services-grid{grid-template-columns:.82fr 1.18fr}}

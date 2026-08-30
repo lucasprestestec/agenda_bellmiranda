@@ -1,7 +1,8 @@
 import {
   Camera, MessageCircle, MapPin, ArrowLeft, ArrowRight, ArrowUpRight,
-  CalendarDays, Clock, User, Sparkles, Check, X, Plus, Trash2, LogOut,
-  ChevronLeft, ChevronRight, Ban,
+  CalendarDays, Calendar, Clock, User, UserRound, Sparkles, Check, X, Plus,
+  Trash2, LogOut, ChevronLeft, ChevronRight, Ban, Menu, ShieldCheck, Gem,
+  HeartHandshake, Leaf, Heart, Crown, Pencil, Lock,
 } from 'lucide-react';
 
 // Lucide is the flagged substitution for the brand's (nonexistent) icon set —
@@ -16,17 +17,29 @@ const ICONS = {
   'arrow-right': ArrowRight,
   'arrow-up-right': ArrowUpRight,
   'calendar-days': CalendarDays,
+  calendar: Calendar,
   clock: Clock,
   user: User,
+  'user-round': UserRound,
   sparkles: Sparkles,
   check: Check,
   x: X,
   plus: Plus,
   trash: Trash2,
+  'trash-2': Trash2,
   'log-out': LogOut,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
   ban: Ban,
+  menu: Menu,
+  'shield-check': ShieldCheck,
+  gem: Gem,
+  'heart-handshake': HeartHandshake,
+  leaf: Leaf,
+  heart: Heart,
+  crown: Crown,
+  pencil: Pencil,
+  lock: Lock,
 };
 
 export function Icon({ name, size = 18, stroke = 1.25, color = 'currentColor', style }) {

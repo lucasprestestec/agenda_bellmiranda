@@ -1,51 +1,51 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Button } from '../core/Button';
-import { Surface } from '../core/Surface';
-import { SectionHeading } from '../core/SectionHeading';
-import { Ornament } from '../core/Ornament';
-import { DateStrip } from '../booking/DateStrip';
-import { TimeSlotGrid } from '../booking/TimeSlotGrid';
-import { BookingSummary } from '../booking/BookingSummary';
 import { ConfirmationPanel } from '../booking/ConfirmationPanel';
-import { ServiceRow } from '../booking/ServiceRow';
+import { DateStrip } from '../booking/DateStrip';
 import { Field } from '../forms/Field';
 import { Input } from '../forms/Input';
 import { Textarea } from '../forms/Textarea';
 import { Checkbox } from '../forms/Checkbox';
 import { Icon } from '../core/Icon';
+import { Button } from '../core/Button';
+import { Ornament } from '../core/Ornament';
+import { useMobile } from '../../lib/useMobile';
 import { SITE } from '../../lib/site-config';
 import { MONTH_LABELS, formatPriceCents } from '../../lib/studio';
 
-function StepRail({ step, labels }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-      {labels.map((l, i) => (
-        <span key={l} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '8px',
-            fontFamily: 'var(--font-sans)', fontSize: '10.5px', letterSpacing: '0.16em', textTransform: 'uppercase',
-            color: i === step ? 'var(--cocoa-800)' : 'var(--text-muted)', opacity: i > step ? .55 : 1 }}>
-            <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1rem',
-              color: i <= step ? 'var(--rose-500)' : 'var(--text-muted)' }}>{'0' + (i + 1)}</span>{l}
-          </span>
-          {i < labels.length - 1 && <span style={{ width: '26px', height: '1px', background: 'var(--border-strong)' }}></span>}
-        </span>
-      ))}
-    </div>
-  );
-}
+const PHOTO_CLASSES = ['ph-w1', 'ph-w2', 'ph-w3', 'ph-w4', 'ph-w5'];
+
+const BENEFITS = [
+  ['heart-handshake', 'Cuidado que acolhe', 'Experiência personalizada do início ao fim.'],
+  ['leaf', 'Produtos premium', 'Marcas de alta performance e segurança.'],
+  ['clock', 'Pontualidade', 'Respeitamos o seu tempo com compromisso total.'],
+  ['heart', 'Ambiente exclusivo', 'Espaço pensado para o seu bem-estar.'],
+];
+
+const capsLabel = { fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--ink-500)' };
+const ghostAction = { display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'none', border: 0, padding: 0, cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--champagne-600)' };
 
 function dayLabelFor(days, value) {
+  const d = days.find((x) => x.value === value);
+  if (!d) return '—';
+  const [y, m] = d.value.split('-');
+  return `${d.day} de ${MONTH_LABELS[Number(m) - 1]} de ${y}`;
+}
+function dayShortFor(days, value) {
   const d = days.find((x) => x.value === value);
   return d ? `${d.day} · ${d.weekday}` : '—';
 }
 
 export function BookingFlow({ services, initialServiceSlug, layout = 'desktop' }) {
-  const mobile = layout === 'mobile';
-  const [step, setStep] = useState(0);
+  const forcedMobile = layout === 'mobile';
+  const viewportMobile = useMobile();
+  const narrow = useMobile(430);
+  const mobile = forcedMobile || viewportMobile;
+
   const [svcSlug, setSvcSlug] = useState(initialServiceSlug || services[0]?.slug);
   const service = useMemo(() => services.find((s) => s.slug === svcSlug) || services[0], [services, svcSlug]);
+  const serviceIndex = services.indexOf(service);
 
   const [days, setDays] = useState([]);
   const [day, setDay] = useState(null);
@@ -53,6 +53,9 @@ export function BookingFlow({ services, initialServiceSlug, layout = 'desktop' }
   const [time, setTime] = useState(null);
   const [loadingDays, setLoadingDays] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
+  const [details, setDetails] = useState(false);
+  const [done, setDone] = useState(false);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -65,9 +68,7 @@ export function BookingFlow({ services, initialServiceSlug, layout = 'desktop' }
   useEffect(() => {
     if (!service) return;
     let cancelled = false;
-    // Loading/reset flags are set synchronously so the UI reacts to the
-    // service change immediately, not only once the fetch settles.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- immediate loading flag on service change
     setLoadingDays(true);
     setDay(null);
     setTime(null);
@@ -107,10 +108,8 @@ export function BookingFlow({ services, initialServiceSlug, layout = 'desktop' }
     );
   }
 
-  const monthLabel = days.length
-    ? (() => { const [y, m] = days[0].value.split('-'); return `${MONTH_LABELS[Number(m) - 1]} ${y}`; })()
-    : '';
   const dayLabel = dayLabelFor(days, day);
+  const dayShort = dayShortFor(days, day);
 
   async function submit() {
     setSubmitting(true);
@@ -132,7 +131,7 @@ export function BookingFlow({ services, initialServiceSlug, layout = 'desktop' }
         return;
       }
       setConfirmation(data.appointment);
-      setStep(3);
+      setDone(true);
     } catch {
       setFormError('Não foi possível confirmar. Verifique sua conexão e tente de novo.');
     } finally {
@@ -140,128 +139,265 @@ export function BookingFlow({ services, initialServiceSlug, layout = 'desktop' }
     }
   }
 
-  const summary = (
-    <BookingSummary
-      items={[
-        { label: 'Serviço', value: service.name },
-        { label: 'Duração', value: service.duration },
-        { label: 'Data', value: dayLabel },
-        { label: 'Horário', value: time || '—' },
-      ]}
-      total={service.price}
-      note="Sinal de 20% no PIX confirma o horário. Remarcações até 24h antes."
-      footer={step < 2 ? (
-        <Button fullWidth disabled={!time} onClick={() => setStep(2)}>Continuar</Button>
-      ) : (
-        <Button fullWidth variant="accent" disabled={!name || !phone || submitting} onClick={submit}>
-          {submitting ? 'Confirmando…' : 'Confirmar horário'}
-        </Button>
-      )}
-    />
-  );
+  if (done) {
+    return (
+      <section id="agendar" style={{ background: 'var(--surface-page)', padding: mobile ? '26px var(--gutter) 44px' : 'clamp(140px,14vw,200px) var(--gutter) var(--section-y)' }}>
+        <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+          <ConfirmationPanel
+            message={'Obrigada, ' + (name || 'linda') + '! Já reservei esse horário no meu caderno. Te espero no estúdio — qualquer mudança, me chama no WhatsApp.'}
+            details={[
+              { label: 'Serviço', value: service.name },
+              { label: 'Data', value: dayShort },
+              { label: 'Horário', value: confirmation?.startTime || time },
+              { label: 'Sinal', value: formatPriceCents(confirmation?.depositCents ?? Math.round(service.priceCents * 0.2)) },
+            ]}
+            actions={
+              <>
+                <Button variant="whatsapp" href={SITE.whatsappHref} iconLeft={<Icon name="message-circle" size={15} />}>Falar no WhatsApp</Button>
+                <Button variant="secondary" onClick={() => { setDone(false); setDetails(false); setConfirmation(null); setName(''); setPhone(''); setNote(''); }}>Agendar outro horário</Button>
+              </>
+            }
+          />
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '34px' }}><Ornament width={200} /></div>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section id="agendar" style={{ padding: mobile ? '22px 18px 40px' : 'var(--section-y-tight) 0 var(--section-y)' }}>
-      <div style={{ maxWidth: 'var(--container)', margin: '0 auto', padding: mobile ? 0 : '0 var(--gutter)' }}>
-        {step < 3 ? (
-          <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', marginBottom: mobile ? '26px' : '46px' }}>
-              <SectionHeading eyebrow="Agendamento" title={mobile ? 'Escolha seu horário' : <>Vamos marcar<br />o seu momento</>} maxWidth={520}
-                lead={mobile ? null : 'Selecione o serviço, o dia e o horário. Você recebe a confirmação no WhatsApp.'} />
-              <StepRail step={step} labels={['Serviço', 'Data e hora', 'Seus dados']} />
+    <section id="agendar" style={{ position: 'relative', background: 'var(--surface-page)', overflow: 'hidden',
+      padding: mobile ? '26px var(--gutter) 44px' : 'clamp(110px,12vw,170px) 0 var(--section-y)' }}>
+      {!mobile && (
+        <div className="ph ph-booking" style={{ position: 'absolute', top: 0, right: 0, width: '38%',
+          height: 'clamp(220px,26vw,330px)', backgroundPosition: 'center 30%' }}></div>
+      )}
+      <div style={{ position: 'relative', maxWidth: 'var(--container)', margin: '0 auto', padding: mobile ? 0 : '0 var(--gutter)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.16fr .84fr',
+          gap: mobile ? '28px' : 'clamp(28px,4vw,60px)', alignItems: 'start' }}>
+
+          <div>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.26em',
+              textTransform: 'uppercase', color: 'var(--champagne-600)' }}>Agendamento</span>
+            <h2 style={{ margin: '22px 0 0', fontFamily: 'var(--font-serif-display)', fontWeight: 300,
+              fontSize: mobile ? '2.2rem' : 'clamp(2.3rem,3.9vw,3.5rem)', lineHeight: 1.08,
+              letterSpacing: '-0.01em', color: 'var(--ink-900)' }}>
+              Vamos marcar<br />o seu momento
+            </h2>
+            <p style={{ margin: '24px 0 0', fontFamily: 'var(--font-sans)', fontSize: '1rem', lineHeight: 1.75,
+              color: 'var(--ink-500)', maxWidth: '46ch' }}>
+              Escolha o serviço ideal para você e reserve um horário. Cuidado, precisão e beleza em cada detalhe.
+            </p>
+
+            <div style={Object.assign({}, capsLabel, { display: 'block', margin: 'clamp(34px,4vw,52px) 0 18px' })}>Escolha seu serviço</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {services.map((s, i) => {
+                const on = svcSlug === s.slug;
+                return (
+                  <button key={s.slug} onClick={() => { setSvcSlug(s.slug); setDetails(false); }}
+                    style={{ cursor: 'pointer', textAlign: 'left', display: 'grid',
+                      gridTemplateColumns: mobile ? '26px 1fr' : '26px 1fr auto auto',
+                      alignItems: mobile ? 'start' : 'center', gap: mobile ? '0 14px' : '0 clamp(14px,2vw,30px)',
+                      padding: 'clamp(20px,2vw,26px) clamp(18px,2vw,26px)',
+                      background: on ? 'rgba(184,149,109,.06)' : 'transparent',
+                      border: '1px solid ' + (on ? 'var(--champagne-500)' : 'var(--border-hairline)') }}>
+                    <span style={{ width: '20px', height: '20px', borderRadius: '50%', marginTop: mobile ? '5px' : 0,
+                      border: '1px solid ' + (on ? 'var(--espresso-900)' : 'var(--border-strong)'),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {on && <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--espresso-900)' }}></span>}
+                    </span>
+                    <span>
+                      <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontWeight: 400,
+                        fontSize: '1.3125rem', color: 'var(--ink-900)' }}>{s.name}</span>
+                      <span style={{ display: 'block', marginTop: '6px', fontFamily: 'var(--font-sans)',
+                        fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--ink-500)', maxWidth: '40ch' }}>{s.description}</span>
+                      {mobile && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--ink-500)',
+                            fontFamily: 'var(--font-sans)', fontSize: '0.8125rem' }}><Icon name="clock" size={13} /> {s.duration}</span>
+                          <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--taupe-500)' }}></span>
+                          <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.25rem', color: 'var(--ink-900)' }}>{s.price}</span>
+                        </span>
+                      )}
+                    </span>
+                    {!mobile && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ink-500)',
+                        fontFamily: 'var(--font-sans)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                        <Icon name="clock" size={14} /> {s.duration}
+                      </span>
+                    )}
+                    {!mobile && (
+                      <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.375rem',
+                        color: 'var(--ink-900)', whiteSpace: 'nowrap', minWidth: '84px', textAlign: 'right' }}>{s.price}</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.25fr .75fr', gap: mobile ? '28px' : 'clamp(28px,4vw,64px)', alignItems: 'start' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '34px' }}>
-                {step === 0 && (
-                  <div style={{ borderBottom: '1px solid var(--border-hairline)' }}>
-                    {services.map((s) => (
-                      <ServiceRow key={s.slug} name={s.name} description={s.description} duration={s.duration}
-                        price={s.price} priceNote={s.priceNote} tags={s.tags}
-                        selected={svcSlug === s.slug} action="Selecionar"
-                        onSelect={() => { setSvcSlug(s.slug); setStep(1); }} />
-                    ))}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap',
+              marginTop: 'clamp(22px,2.4vw,30px)', padding: 'clamp(20px,2vw,26px)',
+              background: 'var(--ivory-200)', border: '1px solid var(--border-hairline)' }}>
+              <span style={{ width: '46px', height: '46px', borderRadius: '50%', background: 'var(--nude-300)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--champagne-600)', flexShrink: 0 }}>
+                <Icon name="crown" size={19} />
+              </span>
+              <span style={{ flex: 1, minWidth: '200px' }}>
+                <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontSize: '1.1875rem', color: 'var(--ink-900)' }}>
+                  Atendimento exclusivo com hora marcada
+                </span>
+                <span style={{ display: 'block', marginTop: '6px', fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--ink-500)' }}>
+                  Ambiente reservado para sua experiência de beleza e bem-estar.
+                </span>
+              </span>
+              <a href="#sobre" style={Object.assign({}, ghostAction, { border: 0 })}>Saiba mais <Icon name="arrow-right" size={13} /></a>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px',
+            position: mobile ? 'static' : 'sticky', top: '120px' }}>
+            <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-hairline)',
+              padding: 'clamp(22px,2.2vw,30px)', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                <span style={capsLabel}>Seu agendamento</span>
+                <button onClick={() => { setTime(null); setDetails(false); }} style={Object.assign({}, ghostAction, { color: 'var(--ink-500)' })}>
+                  Limpar <Icon name="trash-2" size={13} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <span className={'ph ' + PHOTO_CLASSES[serviceIndex % PHOTO_CLASSES.length]} style={{ width: '76px', height: '64px', flexShrink: 0 }}></span>
+                <span>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontSize: '1.1875rem', color: 'var(--ink-900)' }}>{service.name}</span>
+                  <span style={{ display: 'block', marginTop: '5px', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem',
+                    lineHeight: 1.6, color: 'var(--ink-500)' }}>{service.description}</span>
+                </span>
+              </div>
+
+              <span style={{ height: '1px', background: 'var(--border-hairline)' }}></span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={capsLabel}>Data</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ink-900)' }}>
+                    <span style={{ color: 'var(--champagne-600)', lineHeight: 0 }}><Icon name="calendar" size={15} /></span>
+                    <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.125rem' }}>{loadingDays ? 'Carregando…' : dayLabel}</span>
+                  </span>
+                  <button onClick={() => setDateOpen(!dateOpen)} style={ghostAction}>Alterar <Icon name="pencil" size={12} /></button>
+                </div>
+                {dateOpen && (
+                  <div style={{ paddingTop: '6px' }}>
+                    {days.length > 0 && (() => {
+                      const [y, mo] = days[0].value.split('-');
+                      const monthLabel = `${MONTH_LABELS[Number(mo) - 1]} ${y}`;
+                      return <DateStrip monthLabel={monthLabel} days={days} value={day} onChange={(v) => { setDay(v); setTime(null); }} />;
+                    })()}
                   </div>
                 )}
-                {step === 1 && (
-                  <>
-                    <Surface padding={mobile ? 20 : 26} elevation="none">
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '26px' }}>
-                        {loadingDays
-                          ? <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 'var(--text-small)' }}>Carregando dias…</p>
-                          : <DateStrip monthLabel={monthLabel} days={days} value={day} onChange={setDay} />}
-                        <span style={{ height: '1px', background: 'var(--border-hairline)' }}></span>
-                        {loadingSlots
-                          ? <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 'var(--text-small)' }}>Carregando horários…</p>
-                          : <TimeSlotGrid label={'Horários em ' + dayLabel} slots={slots} value={time} onChange={setTime} />}
-                        <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: 'var(--text-caption)', color: 'var(--text-muted)' }}>
-                          Horários riscados já estão reservados.
-                        </p>
-                      </div>
-                    </Surface>
-                    <button onClick={() => setStep(0)} style={{ alignSelf: 'flex-start', background: 'none', border: 0, padding: 0, cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                      ← Trocar serviço
-                    </button>
-                  </>
-                )}
-                {step === 2 && (
-                  <>
-                    <Surface padding={mobile ? 20 : 26} elevation="none">
-                      <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: '20px 22px' }}>
-                        <Field label="Nome" htmlFor="bf-n" required>
-                          <Input id="bf-n" value={name} onChange={(e) => setName(e.target.value)} placeholder="Como te chamo?" />
-                        </Field>
-                        <Field label="WhatsApp" htmlFor="bf-p" required>
-                          <Input id="bf-p" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(15) 99999-0000" />
-                        </Field>
-                        <div style={{ gridColumn: mobile ? 'auto' : '1 / -1' }}>
-                          <Field label="Observação" hint="Formato, comprimento, inspiração — o que você quiser contar.">
-                            <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Quero algo natural, curtinho…" />
-                          </Field>
-                        </div>
-                        <div style={{ gridColumn: mobile ? 'auto' : '1 / -1' }}>
-                          <Checkbox checked={remind} onChange={() => setRemind(!remind)} label="Quero lembrete no WhatsApp um dia antes" />
-                        </div>
-                        {formError && (
-                          <div style={{ gridColumn: mobile ? 'auto' : '1 / -1', color: 'var(--danger-500)', fontSize: 'var(--text-small)' }}>{formError}</div>
-                        )}
-                      </div>
-                    </Surface>
-                    <button onClick={() => setStep(1)} style={{ alignSelf: 'flex-start', background: 'none', border: 0, padding: 0, cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                      ← Trocar data
-                    </button>
-                  </>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={capsLabel}>Horário</span>
+                {loadingSlots ? (
+                  <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--ink-500)' }}>Carregando horários…</p>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: narrow ? 'repeat(3,1fr)' : 'repeat(4,1fr)', gap: '10px' }}>
+                    {slots.map((s) => {
+                      const on = time === s.value;
+                      return (
+                        <button key={s.value} disabled={s.disabled} onClick={() => setTime(s.value)}
+                          style={{ cursor: s.disabled ? 'not-allowed' : 'pointer', padding: '13px 0',
+                            fontFamily: 'var(--font-sans)', fontSize: '0.8125rem',
+                            background: on ? 'var(--espresso-900)' : 'transparent',
+                            color: on ? 'var(--ivory-100)' : (s.disabled ? 'var(--taupe-500)' : 'var(--ink-900)'),
+                            textDecoration: s.disabled ? 'line-through' : 'none',
+                            opacity: s.disabled ? .55 : 1,
+                            border: '1px solid ' + (on ? 'var(--espresso-900)' : 'var(--border-hairline)') }}>{s.value}</button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-              <div style={{ position: mobile ? 'static' : 'sticky', top: '118px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {summary}
-                <Button variant="whatsapp" fullWidth href={SITE.whatsappHref} iconLeft={<Icon name="message-circle" size={15} />}>
-                  Preferir falar comigo
-                </Button>
+
+              <span style={{ height: '1px', background: 'var(--border-hairline)' }}></span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <span style={capsLabel}>Duração</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-sans)',
+                    fontSize: '0.875rem', color: 'var(--ink-900)' }}><Icon name="clock" size={13} /> {service.duration}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <span style={capsLabel}>Valor</span>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--ink-900)' }}>{service.price}</span>
+                </div>
               </div>
-            </div>
-          </>
-        ) : (
-          <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-            <ConfirmationPanel
-              message={'Obrigada, ' + (name || 'linda') + '! Já reservei esse horário no meu caderno. Te espero no estúdio — qualquer mudança, me chama no WhatsApp.'}
-              details={[
-                { label: 'Serviço', value: service.name },
-                { label: 'Data', value: dayLabel },
-                { label: 'Horário', value: confirmation?.startTime || time },
-                { label: 'Sinal', value: formatPriceCents(confirmation?.depositCents ?? Math.round(service.priceCents * 0.2)) },
-              ]}
-              actions={
+
+              {details && (
                 <>
-                  <Button variant="whatsapp" href={SITE.whatsappHref} iconLeft={<Icon name="message-circle" size={15} />}>Falar no WhatsApp</Button>
-                  <Button variant="secondary" onClick={() => { setStep(0); setTime(null); setConfirmation(null); setName(''); setPhone(''); setNote(''); }}>Agendar outro horário</Button>
+                  <span style={{ height: '1px', background: 'var(--border-hairline)' }}></span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <Field label="Nome" htmlFor="bf-n" required>
+                      <Input id="bf-n" value={name} onChange={(e) => setName(e.target.value)} placeholder="Como te chamo?" />
+                    </Field>
+                    <Field label="WhatsApp" htmlFor="bf-p" required>
+                      <Input id="bf-p" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(15) 99999-0000" />
+                    </Field>
+                    <Field label="Observação" hint="Formato, comprimento, inspiração.">
+                      <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Quero algo natural, curtinho…" />
+                    </Field>
+                    <Checkbox checked={remind} onChange={() => setRemind(!remind)} label="Quero lembrete no WhatsApp um dia antes" />
+                    {formError && <span style={{ color: 'var(--danger-500)', fontSize: '0.8125rem' }}>{formError}</span>}
+                  </div>
                 </>
-              }
-            />
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '34px' }}><Ornament width={200} /></div>
+              )}
+
+              <span style={{ height: '1px', background: 'var(--border-hairline)' }}></span>
+
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px' }}>
+                <span style={capsLabel}>Total</span>
+                <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.75rem', color: 'var(--ink-900)' }}>{service.price}</span>
+              </div>
+
+              <button
+                disabled={!time || submitting || (details && (!name || !phone))}
+                onClick={() => { details ? submit() : setDetails(true); }}
+                style={{ cursor: time ? 'pointer' : 'not-allowed', width: '100%', padding: '22px 20px',
+                  background: 'var(--espresso-900)', color: 'var(--ivory-100)', border: '1px solid var(--espresso-900)',
+                  opacity: time ? 1 : .45, fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 600,
+                  letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+                {submitting ? 'Confirmando…' : (details ? 'Confirmar agendamento' : 'Confirmar horário')}
+              </button>
+              <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--ink-500)' }}>
+                Sinal de 20% no PIX confirma o horário. Remarcações até 24h antes.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px',
+              fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--taupe-500)' }}>
+              <Icon name="lock" size={12} /> Seus dados estão protegidos e seguros.
+            </div>
+            <Button variant="whatsapp" fullWidth href={SITE.whatsappHref} iconLeft={<Icon name="message-circle" size={15} />}>
+              Preferir falar comigo
+            </Button>
           </div>
-        )}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(4,1fr)',
+          marginTop: 'clamp(40px,5vw,72px)', border: '1px solid var(--border-hairline)' }}>
+          {BENEFITS.map(([ic, t, d], i) => (
+            <div key={t} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start',
+              padding: 'clamp(22px,2.2vw,30px)',
+              borderRight: (!mobile && i < 3) ? '1px solid var(--border-hairline)' : 'none',
+              borderBottom: (mobile && i < 3) ? '1px solid var(--border-hairline)' : 'none' }}>
+              <span style={{ color: 'var(--champagne-600)', lineHeight: 0, flexShrink: 0, paddingTop: '3px' }}><Icon name={ic} size={22} /></span>
+              <span>
+                <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontSize: '1.0625rem', color: 'var(--ink-900)' }}>{t}</span>
+                <span style={{ display: 'block', marginTop: '6px', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem',
+                  lineHeight: 1.6, color: 'var(--ink-500)' }}>{d}</span>
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
