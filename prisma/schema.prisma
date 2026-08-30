@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Service {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  name         String
+  description  String
+  durationMin  Int
+  priceCents   Int
+  priceNote    String?
+  tags         String? // comma-separated, e.g. "Especialidade"
+  order        Int           @default(0)
+  active       Boolean       @default(true)
+  appointments Appointment[]
+}
+
+// status is one of "CONFIRMED" | "COMPLETED" | "CANCELLED" — see lib/studio.js
+// (SQLite has no native enum type; kept as a plain String.)
+model Appointment {
+  id            String   @id @default(cuid())
+  service       Service  @relation(fields: [serviceId], references: [id])
+  serviceId     String
+  clientName    String
+  clientPhone   String
+  note          String?
+  wantsReminder Boolean  @default(true)
+  date          String // YYYY-MM-DD (studio-local calendar day)
+  startTime     String // HH:mm
+  endTime       String // HH:mm
+  status        String   @default("CONFIRMED")
+  createdAt     DateTime @default(now())
+
+  @@index([date])
+}
+
+model BlockedSlot {
+  id        String   @id @default(cuid())
+  date      String // YYYY-MM-DD
+  startTime String // HH:mm
+  endTime   String // HH:mm
+  reason    String?
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}

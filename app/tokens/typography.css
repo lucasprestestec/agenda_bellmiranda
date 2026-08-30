@@ -1,0 +1,37 @@
+:root{
+  /* Font families are self-hosted via next/font (see app/layout.js), which
+     injects --next-serif / --next-sans / --next-script on <html>. Falling
+     back to the family name keeps this file portable outside Next too. */
+  --font-serif-display:var(--next-serif),"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --font-sans:var(--next-sans),"Manrope","Helvetica Neue",Arial,sans-serif;
+  --font-script:var(--next-script),"Parisienne","Cormorant Garamond",cursive;
+
+  /* Display / editorial serif — always light weight, tight leading */
+  --text-display-1:clamp(3rem,8vw,5.75rem);   /* hero headline */
+  --text-display-2:clamp(2.5rem,5.5vw,4rem);  /* section opener */
+  --text-display-3:clamp(2rem,4vw,3rem);
+  --text-title:1.75rem;
+  --text-subtitle:1.3125rem;
+
+  /* Sans body scale */
+  --text-lead:1.125rem;
+  --text-body:1rem;
+  --text-small:0.875rem;
+  --text-caption:0.8125rem;
+  --text-eyebrow:0.6875rem;  /* letterspaced all-caps label */
+
+  --leading-display:1.02;
+  --leading-title:1.15;
+  --leading-body:1.65;
+  --leading-tight:1.35;
+
+  --tracking-display:-0.01em;
+  --tracking-serif-wide:0.14em;  /* MIRANDA-style wordmark spacing */
+  --tracking-eyebrow:0.24em;
+  --tracking-body:0;
+
+  --weight-light:300;
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-semibold:600;
+}

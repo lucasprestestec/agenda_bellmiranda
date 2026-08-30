@@ -1,0 +1,9 @@
+:root{
+  --ease-soft:cubic-bezier(.22,.61,.36,1); /* @kind other */
+  --ease-in-out:cubic-bezier(.4,0,.2,1); /* @kind other */
+  --dur-fast:140ms; /* @kind other */
+  --dur-base:240ms; /* @kind other */
+  --dur-slow:520ms; /* @kind other */   /* image reveals, scroll fades */
+  --lift-hover:-2px;  /* translateY on cards */
+  --press-scale:.985; /* @kind other */
+}

@@ -1,0 +1,67 @@
+:root{
+  /* ── Base palette ─────────────────────────────────────────────── */
+  --ivory-50:#FEFCFA;
+  --ivory-100:#FAF7F3;   /* primary background — warm ivory */
+  --ivory-200:#F7F2EB;   /* brand board cream */
+  --nude-300:#F3E9E2;    /* secondary background — warm nude */
+  --nude-400:#EBCFC4;    /* brand board nude */
+  --blush-400:#EBCFD0;   /* soft blush */
+  --blush-500:#D8B1B3;   /* brand board blush */
+  --rose-500:#D795A3;    /* muted rose accent */
+  --rose-600:#C57C8C;
+  --sand-300:#E8D9C6;    /* brand board sand */
+  --champagne-500:#B8956D;/* champagne / warm gold */
+  --champagne-600:#A07E58;
+  --taupe-500:#B99C8C;   /* brand board taupe */
+  --cocoa-700:#6B4F45;
+  --cocoa-800:#4A342D;   /* deep cocoa */
+  --ink-900:#221D1B;     /* main text */
+  --ink-500:#746762;     /* secondary text */
+  --line-200:#E7DDD5;
+  --line-300:#DCCFC5;
+  --white:#FFFFFF;
+
+  /* Semantic status — warm-shifted, used sparingly */
+  --success-500:#7C8F6F;
+  --success-100:#EAEFE4;
+  --warning-500:#C99A4E;
+  --warning-100:#F7EEDD;
+  --danger-500:#B4614F;
+  --danger-100:#F6E4DF;
+
+  /* ── Semantic aliases ─────────────────────────────────────────── */
+  --surface-page:var(--ivory-100);
+  --surface-alt:var(--nude-300);
+  --surface-card:var(--ivory-50);
+  --surface-inverse:var(--cocoa-800);
+  --surface-accent-soft:var(--blush-400);
+  --surface-field:var(--white);
+
+  --text-heading:var(--ink-900);
+  --text-body:var(--ink-900);
+  --text-muted:var(--ink-500);
+  --text-accent:var(--rose-500);
+  --text-gold:var(--champagne-500);
+  --text-on-inverse:var(--ivory-100);
+  --text-on-accent:var(--white);
+
+  --border-hairline:var(--line-200);
+  --border-strong:var(--line-300);
+  --border-inverse:var(--cocoa-800);
+  --border-focus:var(--rose-500);
+
+  --action-primary-bg:var(--cocoa-800);
+  --action-primary-bg-hover:var(--ink-900);
+  --action-primary-text:var(--ivory-100);
+  --action-secondary-border:var(--cocoa-800);
+  --action-secondary-text:var(--cocoa-800);
+  --action-accent-bg:var(--rose-500);
+  --action-accent-bg-hover:var(--rose-600);
+
+  --selected-bg:var(--rose-500);
+  --selected-text:var(--white);
+  --selected-soft-bg:var(--blush-400);
+
+  --whatsapp-ink:var(--cocoa-800);
+  --whatsapp-soft:#E3E8DC;
+}

@@ -1,0 +1,9 @@
+:root{
+  --radius-xs:4px;
+  --radius-sm:8px;    /* buttons, fields */
+  --radius-md:12px;   /* buttons large, small cards */
+  --radius-lg:18px;   /* cards, booking panels */
+  --radius-image:14px;
+  --radius-arch:180px 180px 14px 14px; /* editorial arch image crop */
+  --radius-pill:999px; /* filters & tags only */
+}
