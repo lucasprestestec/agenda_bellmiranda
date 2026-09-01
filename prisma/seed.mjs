@@ -2,10 +2,12 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Official catalog (2026-09-01, final revision) — the studio owner asked for
-// exactly these 13 services, nothing else. Durations kept from whatever the
-// service already had (fields simply omitted here) until Bell sets them from
-// /admin/servicos.
+// Official catalog (2026-09-01, final revision) — exactly these 13 services.
+// Durations are kept from whatever the service already had (the field is
+// simply omitted below) until Bell sets them from /admin/servicos. This
+// script only ever upserts these — it never deletes or deactivates
+// anything else, so a service added later through /admin/servicos, or a
+// real appointment, is never touched by a future deploy.
 const SERVICES = [
   {
     slug: 'alongamento-gel',
@@ -104,31 +106,6 @@ const SERVICES = [
 ];
 
 async function main() {
-  const keepSlugs = SERVICES.map((s) => s.slug);
-
-  // ONE-TIME reset requested by the studio owner: wipe every appointment and
-  // blocked slot, and hard-delete any service outside the official list
-  // above (no inactive leftovers either). Logged so the deletions are
-  // auditable in the deploy's build output. This block is intentionally
-  // removed again right after this deploy — it must never run on a normal
-  // future build, or it would wipe real future bookings and any service an
-  // admin adds later through /admin/servicos.
-  const staleAppointments = await prisma.appointment.findMany({
-    select: { id: true, clientName: true, clientPhone: true, date: true, startTime: true },
-  });
-  console.log(`[one-time reset] Deleting ${staleAppointments.length} appointment(s):`, JSON.stringify(staleAppointments));
-  await prisma.appointment.deleteMany({});
-
-  const removedBlocks = await prisma.blockedSlot.deleteMany({});
-  console.log(`[one-time reset] Deleted ${removedBlocks.count} blocked slot(s).`);
-
-  const staleServices = await prisma.service.findMany({
-    where: { slug: { notIn: keepSlugs } },
-    select: { slug: true, name: true, active: true },
-  });
-  console.log(`[one-time reset] Deleting ${staleServices.length} service(s) outside the official catalog:`, JSON.stringify(staleServices));
-  await prisma.service.deleteMany({ where: { slug: { notIn: keepSlugs } } });
-
   for (const service of SERVICES) {
     await prisma.service.upsert({
       where: { slug: service.slug },
@@ -137,7 +114,7 @@ async function main() {
     });
   }
 
-  console.log(`Seeded ${SERVICES.length} services (official catalog only).`);
+  console.log(`Seeded ${SERVICES.length} services.`);
 }
 
 main()
