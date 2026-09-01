@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Logo } from '../../../components/core/Logo';
 import { Field } from '../../../components/forms/Field';
 import { Input } from '../../../components/forms/Input';
 import { Button } from '../../../components/core/Button';
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -26,11 +24,15 @@ export default function AdminLoginPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(data.error || 'Não foi possível entrar.');
+        setLoading(false);
         return;
       }
-      router.push('/admin');
-      router.refresh();
-    } finally {
+      // Full navigation (not router.push) so the request round-trips through
+      // the proxy middleware with the fresh session cookie already attached —
+      // avoids a race where a client-side transition reads a stale router cache.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- deliberate hard nav, see comment above
+      window.location.href = '/admin';
+    } catch {
       setLoading(false);
     }
   }
