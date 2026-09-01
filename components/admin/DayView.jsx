@@ -95,9 +95,10 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
                   <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.375rem', color: 'var(--cocoa-800)' }}>
                     {a.startTime} – {a.endTime}
                   </span>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 'var(--text-body)' }}>{a.clientName} · {a.clientPhone}</span>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 'var(--text-body)' }}>{a.clientName || 'Sem nome'}{a.clientPhone ? ` · ${a.clientPhone}` : ''}</span>
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>
-                    {a.service.name}{a.service.adhoc ? ' (avulso)' : ''} · {a.service.duration} · {a.service.price || 'preço a definir'}
+                    {a.service.name}{a.service.adhoc ? ' (avulso)' : ''}
+                    {' · ' + [a.service.duration, a.service.price || 'preço a definir'].filter(Boolean).join(' · ')}
                   </span>
                   {a.note && <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>Obs: {a.note}</span>}
                 </div>

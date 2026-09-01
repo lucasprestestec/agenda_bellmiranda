@@ -2,10 +2,10 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Real catalog from the studio (2026-09-01 revision). Prices/durations kept
-// from the previous catalog where a service clearly carries over; left null
-// (not bookable online yet) for genuinely new services until Bell sets a
-// price/duration from /admin/servicos.
+// Official catalog (2026-09-01, final revision) — the studio owner asked for
+// exactly these 13 services, nothing else. Durations kept from whatever the
+// service already had (fields simply omitted here) until Bell sets them from
+// /admin/servicos.
 const SERVICES = [
   {
     slug: 'alongamento-gel',
@@ -45,67 +45,53 @@ const SERVICES = [
     order: 4,
   },
   {
-    slug: 'blindagem-unhas',
-    name: 'Blindagem de unhas naturais',
-    description: 'Proteção das unhas naturais com acabamento leve, resistente e de aparência natural.',
-    priceCents: null,
-    order: 5,
-  },
-  {
     slug: 'esmaltacao-gel-maos',
     name: 'Esmaltação em gel — mãos',
     description: 'Esmaltação em gel com acabamento uniforme, brilho intenso e maior durabilidade.',
-    priceCents: null,
-    order: 6,
+    priceCents: 8500,
+    order: 5,
   },
   {
     slug: 'esmaltacao-gel-pes',
     name: 'Esmaltação em gel — pés',
     description: 'Esmaltação em gel nos pés com acabamento preciso, brilho intenso e maior durabilidade.',
-    priceCents: null,
+    priceCents: 9500,
+    order: 6,
+  },
+  {
+    slug: 'postica-realista',
+    name: 'Postiça realista',
+    description: 'Alongamento com unhas postiças de aparência natural e acabamento cuidadosamente ajustado.',
+    priceCents: 12000,
     order: 7,
-  },
-  {
-    slug: 'cuticula-esmaltacao',
-    name: 'Cutícula + esmaltação',
-    description: 'Cuidado das cutículas com esmaltação e acabamento preciso.',
-    priceCents: null,
-    order: 8,
-  },
-  {
-    slug: 'nail-design-autoral',
-    name: 'Nail design autoral',
-    description: 'Criações personalizadas para complementar as unhas com detalhes únicos e delicados.',
-    priceCents: null,
-    order: 9,
   },
   {
     slug: 'so-mao',
     name: 'Manicure tradicional',
     description: 'Cuidado das mãos e cutículas com esmaltação tradicional e acabamento delicado.',
     priceCents: 3700,
-    order: 10,
+    order: 8,
   },
   {
     slug: 'so-pe',
     name: 'Pedicure tradicional',
     description: 'Cuidado dos pés e cutículas com esmaltação tradicional e acabamento preciso.',
     priceCents: 4200,
-    order: 11,
+    order: 9,
   },
   {
     slug: 'pe-mao-tradicional',
     name: 'Mãos + pés tradicional',
     description: 'Manicure e pedicure tradicional realizados no mesmo atendimento.',
     priceCents: 6500,
-    order: 12,
+    order: 10,
   },
   {
     slug: 'spa-pes',
     name: 'Spa dos pés',
     description: 'Cuidado completo para os pés com renovação, hidratação e acabamento.',
     priceCents: 12000,
-    order: 13,
+    order: 11,
   },
   {
     slug: 'reconstrucao-unha-pe',
@@ -113,19 +99,35 @@ const SERVICES = [
     description: 'Reconstrução estética para recuperar o formato e a aparência natural da unha.',
     priceCents: 2500,
     priceNote: 'cada unha',
-    order: 14,
-  },
-  {
-    slug: 'postica-realista',
-    name: 'Postiça realista',
-    description: 'Alongamento com unhas postiças de aparência natural e acabamento cuidadosamente ajustado.',
-    priceCents: 12000,
-    order: 15,
+    order: 12,
   },
 ];
 
 async function main() {
   const keepSlugs = SERVICES.map((s) => s.slug);
+
+  // ONE-TIME reset requested by the studio owner: wipe every appointment and
+  // blocked slot, and hard-delete any service outside the official list
+  // above (no inactive leftovers either). Logged so the deletions are
+  // auditable in the deploy's build output. This block is intentionally
+  // removed again right after this deploy — it must never run on a normal
+  // future build, or it would wipe real future bookings and any service an
+  // admin adds later through /admin/servicos.
+  const staleAppointments = await prisma.appointment.findMany({
+    select: { id: true, clientName: true, clientPhone: true, date: true, startTime: true },
+  });
+  console.log(`[one-time reset] Deleting ${staleAppointments.length} appointment(s):`, JSON.stringify(staleAppointments));
+  await prisma.appointment.deleteMany({});
+
+  const removedBlocks = await prisma.blockedSlot.deleteMany({});
+  console.log(`[one-time reset] Deleted ${removedBlocks.count} blocked slot(s).`);
+
+  const staleServices = await prisma.service.findMany({
+    where: { slug: { notIn: keepSlugs } },
+    select: { slug: true, name: true, active: true },
+  });
+  console.log(`[one-time reset] Deleting ${staleServices.length} service(s) outside the official catalog:`, JSON.stringify(staleServices));
+  await prisma.service.deleteMany({ where: { slug: { notIn: keepSlugs } } });
 
   for (const service of SERVICES) {
     await prisma.service.upsert({
@@ -135,14 +137,7 @@ async function main() {
     });
   }
 
-  // Retire any previous catalog entries not in this list (deactivate, not
-  // delete, so past appointments keep their service reference intact).
-  const retired = await prisma.service.updateMany({
-    where: { slug: { notIn: keepSlugs } },
-    data: { active: false },
-  });
-
-  console.log(`Seeded ${SERVICES.length} services. Retired ${retired.count} old ones.`);
+  console.log(`Seeded ${SERVICES.length} services (official catalog only).`);
 }
 
 main()

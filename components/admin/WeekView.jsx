@@ -62,7 +62,7 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
                         borderRadius: 'var(--radius-xs)', padding: '10px 12px', background: color.bg, color: color.fg,
                         fontFamily: 'var(--font-sans)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                         <span style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-                          <span style={{ fontSize: '11px', fontWeight: 600 }}>{a.startTime} · {a.clientName}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 600 }}>{a.startTime} · {a.clientName || 'Sem nome'}</span>
                           <span style={{ fontSize: '11px', opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.service.name}</span>
                         </span>
                       </button>
@@ -108,7 +108,7 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
                   <button key={a.id} onClick={() => onEditAppointment(a.id)} style={{ border: 0, textAlign: 'left', cursor: 'pointer',
                     borderRadius: 'var(--radius-xs)', padding: '6px 8px', background: color.bg, color: color.fg, fontFamily: 'var(--font-sans)' }}>
                     <div style={{ fontSize: '11px', fontWeight: 600 }}>{a.startTime}</div>
-                    <div style={{ fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.clientName}</div>
+                    <div style={{ fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.clientName || 'Sem nome'}</div>
                     <div style={{ fontSize: '10px', opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.service.name}</div>
                   </button>
                 );

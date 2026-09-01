@@ -26,10 +26,6 @@ export async function POST(request) {
   if (!DATE_RE.test(date || '') || !TIME_RE.test(startTime || '')) {
     return NextResponse.json({ error: 'Data ou horário inválidos.' }, { status: 400 });
   }
-  if (!clientName || !clientPhone) {
-    return NextResponse.json({ error: 'Nome e WhatsApp são obrigatórios.' }, { status: 400 });
-  }
-
   let durationMin;
   let data = {
     clientName, clientPhone, note,

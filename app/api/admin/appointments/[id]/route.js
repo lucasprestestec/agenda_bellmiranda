@@ -53,14 +53,19 @@ export async function PATCH(request, { params }) {
     } else {
       const service = await prisma.service.findUnique({ where: { id: body.serviceId } });
       if (!service) return NextResponse.json({ error: 'Serviço não encontrado.' }, { status: 400 });
-      if (service.durationMin == null) {
-        return NextResponse.json({ error: 'Defina a duração desse serviço antes de usá-lo em um agendamento.' }, { status: 400 });
-      }
       data.serviceId = service.id;
       data.customServiceName = null;
       data.customPriceCents = null;
       data.customDurationMin = null;
-      durationMin = service.durationMin;
+      if (service.durationMin != null) {
+        durationMin = service.durationMin;
+      } else {
+        const overrideDuration = Number(body.customDurationMin);
+        if (!Number.isFinite(overrideDuration) || overrideDuration < 5) {
+          return NextResponse.json({ error: 'Esse serviço não tem duração definida — informe a duração deste atendimento.' }, { status: 400 });
+        }
+        durationMin = Math.round(overrideDuration);
+      }
     }
   } else if (body.customDurationMin !== undefined && existing.serviceId === null) {
     // Editing an ad-hoc appointment's own duration without changing anything else.

@@ -49,7 +49,7 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
     setConflict(false);
     fetch('/api/admin/services').then((r) => r.json()).then((data) => {
       if (cancelled) return;
-      setServices((data.services || []).filter((s) => s.active && s.bookable));
+      setServices((data.services || []).filter((s) => s.active));
     });
 
     if (appointmentId) {
@@ -103,6 +103,16 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
     if (mode === 'catalog') {
       if (!serviceId) { setError('Escolha um serviço.'); setSaving(false); return; }
       body.serviceId = serviceId;
+      const selected = services.find((s) => s.id === serviceId);
+      if (selected && selected.durationMin == null) {
+        const duration = Number(customDurationMin);
+        if (!Number.isFinite(duration) || duration < 5) {
+          setError('Esse serviço ainda não tem duração cadastrada — informe a duração deste atendimento.');
+          setSaving(false);
+          return;
+        }
+        body.customDurationMin = Math.round(duration);
+      }
     } else {
       const price = Number(customPriceReais);
       const duration = Number(customDurationMin);
@@ -160,11 +170,22 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
             </div>
 
             {mode === 'catalog' ? (
-              <Field label="Serviço" htmlFor="af-service" required>
-                <Select id="af-service" value={serviceId} onChange={(e) => setServiceId(e.target.value)} required
-                  placeholder="Selecione…"
-                  options={services.map((s) => ({ value: s.id, label: `${s.name} · ${s.duration} · ${s.price}` }))} />
-              </Field>
+              <>
+                <Field label="Serviço" htmlFor="af-service" required>
+                  <Select id="af-service" value={serviceId} required placeholder="Selecione…"
+                    onChange={(e) => { setServiceId(e.target.value); setCustomDurationMin(''); }}
+                    options={services.map((s) => ({ value: s.id, label: `${s.name} · ${s.duration || 'sem duração cadastrada'} · ${s.price || 'sem preço cadastrado'}` }))} />
+                </Field>
+                {(() => {
+                  const selected = services.find((s) => s.id === serviceId);
+                  if (!selected || selected.durationMin != null) return null;
+                  return (
+                    <Field label="Duração deste atendimento (min)" htmlFor="af-catalog-dur" hint="Esse serviço ainda não tem duração cadastrada no catálogo" required>
+                      <Input id="af-catalog-dur" type="number" min="5" step="5" value={customDurationMin} onChange={(e) => setCustomDurationMin(e.target.value)} required />
+                    </Field>
+                  );
+                })()}
+              </>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: m ? '1fr' : '1fr 1fr 1fr', gap: '14px' }}>
                 <Field label="Nome do serviço" htmlFor="af-cname" required style={m ? undefined : { gridColumn: '1 / -1' }}>
@@ -189,11 +210,11 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: m ? '1fr' : '1fr 1fr', gap: '14px' }}>
-              <Field label="Cliente" htmlFor="af-name" required>
-                <Input id="af-name" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
+              <Field label="Cliente" htmlFor="af-name" hint="Opcional">
+                <Input id="af-name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
               </Field>
-              <Field label="WhatsApp" htmlFor="af-phone" required>
-                <Input id="af-phone" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} required />
+              <Field label="WhatsApp" htmlFor="af-phone" hint="Opcional">
+                <Input id="af-phone" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} />
               </Field>
             </div>
 
