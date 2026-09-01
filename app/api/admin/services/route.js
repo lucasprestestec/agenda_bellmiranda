@@ -30,8 +30,12 @@ export async function POST(request) {
   if (!name) return NextResponse.json({ error: 'Nome é obrigatório.' }, { status: 400 });
 
   const description = String(body.description || '').trim().slice(0, 600);
-  const priceCents = Number.isFinite(body.priceCents) ? Math.max(0, Math.round(body.priceCents)) : null;
-  if (priceCents === null) return NextResponse.json({ error: 'Preço inválido.' }, { status: 400 });
+
+  let priceCents = null;
+  if (body.priceCents !== null && body.priceCents !== undefined && body.priceCents !== '') {
+    priceCents = Math.max(0, Math.round(Number(body.priceCents)));
+    if (!Number.isFinite(priceCents)) return NextResponse.json({ error: 'Preço inválido.' }, { status: 400 });
+  }
 
   const durationMin = body.durationMin === null || body.durationMin === undefined || body.durationMin === ''
     ? null

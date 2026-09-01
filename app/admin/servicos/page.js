@@ -9,6 +9,7 @@ import { Surface } from '../../../components/core/Surface';
 import { Field } from '../../../components/forms/Field';
 import { Input } from '../../../components/forms/Input';
 import { Textarea } from '../../../components/forms/Textarea';
+import { useMobile } from '../../../lib/useMobile';
 
 const emptyDraft = { name: '', description: '', priceReais: '', durationMin: '', priceNote: '', tags: '', order: '0' };
 
@@ -16,7 +17,7 @@ function toDraft(service) {
   return {
     name: service.name,
     description: service.description || '',
-    priceReais: String(Math.round(service.priceCents / 100)),
+    priceReais: service.priceCents != null ? String(Math.round(service.priceCents / 100)) : '',
     durationMin: service.durationMin != null ? String(service.durationMin) : '',
     priceNote: service.priceNote || '',
     tags: (service.tags || []).join(', '),
@@ -25,11 +26,10 @@ function toDraft(service) {
 }
 
 function toPayload(draft) {
-  const price = Number(draft.priceReais);
   return {
     name: draft.name.trim(),
     description: draft.description.trim(),
-    priceCents: Number.isFinite(price) ? Math.round(price * 100) : NaN,
+    priceCents: draft.priceReais === '' ? null : Math.round(Number(draft.priceReais) * 100),
     durationMin: draft.durationMin === '' ? null : Number(draft.durationMin),
     priceNote: draft.priceNote.trim() || null,
     tags: draft.tags.trim() || null,
@@ -37,7 +37,14 @@ function toPayload(draft) {
   };
 }
 
+function isValidPayload(payload) {
+  if (!payload.name) return false;
+  if (payload.priceCents !== null && (!Number.isFinite(payload.priceCents) || payload.priceCents < 0)) return false;
+  return true;
+}
+
 export default function AdminServicesPage() {
+  const m = useMobile();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -69,8 +76,8 @@ export default function AdminServicesPage() {
 
   async function saveEdit(id) {
     const payload = toPayload(drafts[id]);
-    if (!payload.name || !Number.isFinite(payload.priceCents) || payload.priceCents < 0) {
-      setError('Nome e preço válidos são obrigatórios.');
+    if (!isValidPayload(payload)) {
+      setError('Nome é obrigatório, e o preço (se informado) precisa ser válido.');
       return;
     }
     setSaving(true);
@@ -104,8 +111,8 @@ export default function AdminServicesPage() {
     e.preventDefault();
     setError(null);
     const payload = toPayload(newDraft);
-    if (!payload.name || !Number.isFinite(payload.priceCents) || payload.priceCents < 0) {
-      setError('Nome e preço válidos são obrigatórios.');
+    if (!isValidPayload(payload)) {
+      setError('Nome é obrigatório, e o preço (se informado) precisa ser válido.');
       return;
     }
     setSaving(true);
@@ -125,23 +132,25 @@ export default function AdminServicesPage() {
     <div style={{ minHeight: '100vh', background: 'var(--surface-page)' }}>
       <AdminHeader />
 
-      <main style={{ maxWidth: '880px', margin: '0 auto', padding: '40px var(--gutter) 80px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+      <main style={{ maxWidth: '880px', margin: '0 auto', padding: m ? '24px var(--gutter) 60px' : '40px var(--gutter) 80px',
+        display: 'flex', flexDirection: 'column', gap: m ? '22px' : '32px' }}>
+        <div style={{ display: 'flex', flexDirection: m ? 'column' : 'row', alignItems: m ? 'stretch' : 'center',
+          justifyContent: 'space-between', gap: '16px' }}>
           <div>
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-eyebrow)', letterSpacing: 'var(--tracking-eyebrow)', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Catálogo</span>
-            <h1 style={{ margin: '10px 0 0', fontFamily: 'var(--font-serif-display)', fontWeight: 300, fontSize: '1.75rem', color: 'var(--text-heading)' }}>Serviços e preços</h1>
+            <h1 style={{ margin: '10px 0 0', fontFamily: 'var(--font-serif-display)', fontWeight: 300, fontSize: m ? '1.5rem' : '1.75rem', color: 'var(--text-heading)' }}>Serviços e preços</h1>
           </div>
-          <Button iconLeft={<Icon name="plus" size={15} />} onClick={() => { setCreating((c) => !c); setError(null); }}>
+          <Button fullWidth={m} iconLeft={<Icon name="plus" size={15} />} onClick={() => { setCreating((c) => !c); setError(null); }}>
             {creating ? 'Fechar' : 'Novo serviço'}
           </Button>
         </div>
 
         {creating && (
-          <Surface padding={24} elevation="sm">
+          <Surface padding={m ? 16 : 24} elevation="sm">
             <form onSubmit={createService} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <ServiceFields draft={newDraft} onChange={(patch) => setNewDraft((d) => ({ ...d, ...patch }))} idPrefix="new" />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <Button type="submit" disabled={saving}>{saving ? 'Salvando…' : 'Criar serviço'}</Button>
+              <ServiceFields draft={newDraft} onChange={(patch) => setNewDraft((d) => ({ ...d, ...patch }))} idPrefix="new" mobile={m} />
+              <div style={{ display: 'flex', justifyContent: m ? 'stretch' : 'flex-end', gap: '10px' }}>
+                <Button type="submit" fullWidth={m} disabled={saving}>{saving ? 'Salvando…' : 'Criar serviço'}</Button>
               </div>
             </form>
           </Surface>
@@ -154,30 +163,30 @@ export default function AdminServicesPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {services.map((service) => (
-              <Surface key={service.id} padding={20} elevation="xs" style={{ opacity: service.active ? 1 : 0.55 }}>
+              <Surface key={service.id} padding={m ? 16 : 20} elevation="xs" style={{ opacity: service.active ? 1 : 0.55 }}>
                 {editingId === service.id ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <ServiceFields draft={drafts[service.id]} onChange={(patch) => updateDraft(service.id, patch)} idPrefix={service.id} />
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                      <Button variant="secondary" onClick={() => setEditingId(null)}>Cancelar</Button>
-                      <Button onClick={() => saveEdit(service.id)} disabled={saving}>{saving ? 'Salvando…' : 'Salvar'}</Button>
+                    <ServiceFields draft={drafts[service.id]} onChange={(patch) => updateDraft(service.id, patch)} idPrefix={service.id} mobile={m} />
+                    <div style={{ display: 'flex', flexDirection: m ? 'column-reverse' : 'row', justifyContent: 'flex-end', gap: '10px' }}>
+                      <Button variant="secondary" fullWidth={m} onClick={() => setEditingId(null)}>Cancelar</Button>
+                      <Button fullWidth={m} onClick={() => saveEdit(service.id)} disabled={saving}>{saving ? 'Salvando…' : 'Salvar'}</Button>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexDirection: m ? 'column' : 'row', justifyContent: 'space-between', gap: m ? '12px' : '20px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.25rem', color: 'var(--text-heading)' }}>{service.name}</span>
                       <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>
-                        {service.price}{service.priceNote ? ` · ${service.priceNote}` : ''} · {service.duration || 'duração não definida'}
+                        {service.price || 'preço a definir'}{service.priceNote ? ` · ${service.priceNote}` : ''} · {service.duration || 'duração não definida'}
                         {!service.active ? ' · Inativo' : ''}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IconButton label="Editar" variant="bare" size={36} onClick={() => startEdit(service)}><Icon name="pencil" size={16} /></IconButton>
-                      <IconButton label={service.active ? 'Desativar' : 'Ativar'} variant="bare" size={36} onClick={() => toggleActive(service)}>
+                      <IconButton label="Editar" variant="bare" size={m ? 40 : 36} onClick={() => startEdit(service)}><Icon name="pencil" size={16} /></IconButton>
+                      <IconButton label={service.active ? 'Desativar' : 'Ativar'} variant="bare" size={m ? 40 : 36} onClick={() => toggleActive(service)}>
                         <Icon name={service.active ? 'x' : 'check'} size={16} />
                       </IconButton>
-                      <IconButton label="Excluir" variant="bare" size={36} onClick={() => remove(service)}><Icon name="trash" size={16} /></IconButton>
+                      <IconButton label="Excluir" variant="bare" size={m ? 40 : 36} onClick={() => remove(service)}><Icon name="trash" size={16} /></IconButton>
                     </div>
                   </div>
                 )}
@@ -190,11 +199,11 @@ export default function AdminServicesPage() {
   );
 }
 
-function ServiceFields({ draft, onChange, idPrefix }) {
+function ServiceFields({ draft, onChange, idPrefix, mobile }) {
   if (!draft) return null;
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '2fr 1fr', gap: '14px' }}>
         <Field label="Nome" htmlFor={`${idPrefix}-name`} required>
           <Input id={`${idPrefix}-name`} value={draft.name} onChange={(e) => onChange({ name: e.target.value })} required />
         </Field>
@@ -205,9 +214,9 @@ function ServiceFields({ draft, onChange, idPrefix }) {
       <Field label="Descrição" htmlFor={`${idPrefix}-desc`}>
         <Textarea id={`${idPrefix}-desc`} rows={2} value={draft.description} onChange={(e) => onChange({ description: e.target.value })} />
       </Field>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr', gap: '14px' }}>
-        <Field label="Preço (R$)" htmlFor={`${idPrefix}-price`} required>
-          <Input id={`${idPrefix}-price`} type="number" min="0" step="1" value={draft.priceReais} onChange={(e) => onChange({ priceReais: e.target.value })} required />
+      <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr 1.4fr', gap: '14px' }}>
+        <Field label="Preço (R$)" htmlFor={`${idPrefix}-price`} hint="Deixe vazio se ainda não definido">
+          <Input id={`${idPrefix}-price`} type="number" min="0" step="1" value={draft.priceReais} onChange={(e) => onChange({ priceReais: e.target.value })} />
         </Field>
         <Field label="Duração (min)" htmlFor={`${idPrefix}-dur`} hint="Deixe vazio se ainda não definida">
           <Input id={`${idPrefix}-dur`} type="number" min="5" step="5" value={draft.durationMin} onChange={(e) => onChange({ durationMin: e.target.value })} />

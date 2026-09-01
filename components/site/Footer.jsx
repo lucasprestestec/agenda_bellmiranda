@@ -26,8 +26,8 @@ export function Footer() {
             <span style={{ fontFamily: 'var(--font-script)', fontSize: m ? '1.3rem' : '1.5rem', color: 'var(--nude-400)' }}>Seu momento. Suas unhas.</span>
           </div>
           <Column title="Estúdio" lines={[SITE.address, SITE.city, SITE.hours]} />
-          <Column title="Contato" lines={[`WhatsApp ${SITE.whatsappDisplay}`, SITE.email, SITE.instagramHandle]} />
-          <Column title="Atendimento" lines={['Somente com hora marcada', 'Sinal de 20% confirma o horário', 'Remarque até 24h antes']} />
+          <Column title="Contato" lines={[`WhatsApp ${SITE.whatsappDisplay}`, SITE.instagramHandle]} />
+          <Column title="Atendimento" lines={['Somente com hora marcada', 'Remarque até 24h antes']} />
         </div>
         <div style={{ marginTop: m ? '34px' : '46px', paddingTop: '22px', borderTop: '1px solid rgba(250,247,243,.14)',
           display: 'flex', flexDirection: m ? 'column-reverse' : 'row', justifyContent: 'space-between',

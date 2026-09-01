@@ -10,6 +10,7 @@ import { Button } from '../../components/core/Button';
 import { IconButton } from '../../components/core/IconButton';
 import { Icon } from '../../components/core/Icon';
 import { dateToISO } from '../../lib/studio';
+import { useMobile } from '../../lib/useMobile';
 import { addDays, addMonths, startOfWeek, startOfMonth, formatLong, formatMonthYear, formatWeekRange } from '../../lib/calendar';
 
 const VIEWS = [
@@ -19,6 +20,7 @@ const VIEWS = [
 ];
 
 export default function AdminAgendaPage() {
+  const m = useMobile();
   const today = dateToISO(new Date());
   const [view, setView] = useState('day');
   const [focusDate, setFocusDate] = useState(today);
@@ -74,51 +76,59 @@ export default function AdminAgendaPage() {
     <div style={{ minHeight: '100vh', background: 'var(--surface-page)' }}>
       <AdminHeader />
 
-      <main style={{ maxWidth: '1080px', margin: '0 auto', padding: '40px var(--gutter) 80px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
-            <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-eyebrow)', letterSpacing: 'var(--tracking-eyebrow)', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Agenda</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '10px' }}>
-              <IconButton label="Anterior" variant="outline" size={38} onClick={goPrev}>
-                <Icon name="chevron-left" size={16} />
-              </IconButton>
-              <h1 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 300, fontSize: '1.75rem', color: 'var(--text-heading)', minWidth: '220px' }}>
-                {label()}
-              </h1>
-              <IconButton label="Próximo" variant="outline" size={38} onClick={goNext}>
-                <Icon name="chevron-right" size={16} />
-              </IconButton>
-              <Button variant="ghost" onClick={goToday}>Hoje</Button>
-            </div>
-          </div>
+      <main style={{ maxWidth: '1080px', margin: '0 auto', padding: m ? '24px var(--gutter) 60px' : '40px var(--gutter) 80px',
+        display: 'flex', flexDirection: 'column', gap: m ? '20px' : '32px' }}>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ display: 'flex', gap: '6px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-pill)', padding: '4px' }}>
+        {/* Row 1: eyebrow + view switcher + create button — a fixed layout that
+            never shifts, regardless of how long the date label in row 2 gets. */}
+        <div style={{ display: 'flex', flexDirection: m ? 'column' : 'row', alignItems: m ? 'stretch' : 'center',
+          justifyContent: 'space-between', gap: m ? '14px' : '16px' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-eyebrow)', letterSpacing: 'var(--tracking-eyebrow)', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Agenda</span>
+          <div style={{ display: 'flex', flexDirection: m ? 'column' : 'row', alignItems: m ? 'stretch' : 'center', gap: m ? '10px' : '16px' }}>
+            <div style={{ display: m ? 'grid' : 'flex', gridTemplateColumns: m ? 'repeat(3, 1fr)' : undefined,
+              gap: '6px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-pill)', padding: '4px' }}>
               {VIEWS.map((v) => (
                 <button key={v.value} onClick={() => setView(v.value)} style={{
-                  border: 0, cursor: 'pointer', padding: '8px 18px', borderRadius: 'var(--radius-pill)',
+                  border: 0, cursor: 'pointer', padding: m ? '9px 12px' : '8px 18px', borderRadius: 'var(--radius-pill)',
                   fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
                   background: view === v.value ? 'var(--surface-card)' : 'transparent',
                   color: view === v.value ? 'var(--cocoa-800)' : 'var(--text-muted)',
                   boxShadow: view === v.value ? 'var(--shadow-xs)' : 'none' }}>{v.label}</button>
               ))}
             </div>
-            <Button iconLeft={<Icon name="plus" size={15} />} onClick={() => openCreate(focusDate)}>Novo agendamento</Button>
+            <Button fullWidth={m} iconLeft={<Icon name="plus" size={15} />} onClick={() => openCreate(focusDate)}>Novo agendamento</Button>
           </div>
         </div>
 
+        {/* Row 2: date navigation — free to grow/shrink with the label's length
+            without touching row 1's position. */}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: m ? 'center' : 'flex-start',
+          gap: m ? '10px' : '14px' }}>
+          <IconButton label="Anterior" variant="outline" size={m ? 34 : 38} onClick={goPrev}>
+            <Icon name="chevron-left" size={16} />
+          </IconButton>
+          <h1 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 300, fontSize: m ? '1.25rem' : '1.75rem',
+            color: 'var(--text-heading)', textAlign: 'center' }}>
+            {label()}
+          </h1>
+          <IconButton label="Próximo" variant="outline" size={m ? 34 : 38} onClick={goNext}>
+            <Icon name="chevron-right" size={16} />
+          </IconButton>
+          <Button variant="ghost" onClick={goToday}>Hoje</Button>
+        </div>
+
         {view === 'month' && (
-          <MonthView monthDate={startOfMonth(focusDate)} refreshToken={refreshToken} today={today}
+          <MonthView monthDate={startOfMonth(focusDate)} refreshToken={refreshToken} today={today} mobile={m}
             onSelectDay={(d) => { setFocusDate(d); setView('day'); }} />
         )}
         {view === 'week' && (
-          <WeekView weekStart={startOfWeek(focusDate)} refreshToken={refreshToken} today={today}
+          <WeekView weekStart={startOfWeek(focusDate)} refreshToken={refreshToken} today={today} mobile={m}
             onSelectDay={(d) => { setFocusDate(d); setView('day'); }}
             onEditAppointment={openEdit}
             onCreateAt={openCreate} />
         )}
         {view === 'day' && (
-          <DayView date={focusDate} refreshToken={refreshToken} onEdit={openEdit} onCreate={openCreate} />
+          <DayView date={focusDate} refreshToken={refreshToken} mobile={m} onEdit={openEdit} />
         )}
       </main>
 

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useMobile } from '../../lib/useMobile';
 
 function ServiceLine({ index, name, description, duration, price, bookable, last, mobile, onSelect }) {
-  const [cur, val] = price.split(/\s+/);
+  const [cur, val] = price ? price.split(/\s+/) : [null, null];
   const priceBlock = (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: mobile ? '12px' : '14px',
       paddingTop: mobile ? 0 : '10px', whiteSpace: 'nowrap' }}>
@@ -15,11 +15,15 @@ function ServiceLine({ index, name, description, duration, price, bookable, last
           textTransform: 'uppercase', color: 'var(--champagne-600)', border: '1px solid var(--champagne-500)',
           borderRadius: '999px', padding: '3px 9px' }}>Em breve</span>
       )}
-      <span style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-        <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1rem', color: 'var(--champagne-600)' }}>{cur}</span>
-        <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: mobile ? '1.75rem' : 'clamp(1.9rem,2.6vw,2.5rem)',
-          fontWeight: 300, lineHeight: 1, color: 'var(--champagne-600)' }}>{val}</span>
-      </span>
+      {price ? (
+        <span style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+          <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1rem', color: 'var(--champagne-600)' }}>{cur}</span>
+          <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: mobile ? '1.75rem' : 'clamp(1.9rem,2.6vw,2.5rem)',
+            fontWeight: 300, lineHeight: 1, color: 'var(--champagne-600)' }}>{val}</span>
+        </span>
+      ) : (
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--ink-500)' }}>Consulte o valor</span>
+      )}
     </div>
   );
   const content = mobile ? (

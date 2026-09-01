@@ -14,10 +14,13 @@ export async function PATCH(request, { params }) {
   if (typeof body.name === 'string') data.name = body.name.trim().slice(0, 120);
   if (typeof body.description === 'string') data.description = body.description.trim().slice(0, 600);
   if (body.priceCents !== undefined) {
-    if (!Number.isFinite(body.priceCents) || body.priceCents < 0) {
+    if (body.priceCents === null || body.priceCents === '') {
+      data.priceCents = null;
+    } else if (!Number.isFinite(body.priceCents) || body.priceCents < 0) {
       return NextResponse.json({ error: 'Preço inválido.' }, { status: 400 });
+    } else {
+      data.priceCents = Math.round(body.priceCents);
     }
-    data.priceCents = Math.round(body.priceCents);
   }
   if (body.durationMin !== undefined) {
     data.durationMin = body.durationMin === null || body.durationMin === ''

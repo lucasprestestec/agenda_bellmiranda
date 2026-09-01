@@ -10,7 +10,7 @@ export async function GET(request) {
 
   const service = await getServiceBySlug(slug);
   if (!service) return NextResponse.json({ error: 'Serviço não encontrado.' }, { status: 404 });
-  if (service.durationMin == null) {
+  if (service.durationMin == null || service.priceCents == null) {
     return NextResponse.json({ error: 'Serviço ainda não está disponível para agendamento online.' }, { status: 409 });
   }
 

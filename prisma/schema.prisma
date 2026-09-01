@@ -13,7 +13,7 @@ model Service {
   name         String
   description  String
   durationMin  Int? // null = duration not set yet; not bookable online until it is
-  priceCents   Int
+  priceCents   Int? // null = price not set yet; not bookable online until it is
   priceNote    String?
   tags         String? // comma-separated, e.g. "Especialidade"
   order        Int           @default(0)

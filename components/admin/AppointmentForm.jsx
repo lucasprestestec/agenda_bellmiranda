@@ -8,6 +8,7 @@ import { Field } from '../forms/Field';
 import { Input } from '../forms/Input';
 import { Select } from '../forms/Select';
 import { Textarea } from '../forms/Textarea';
+import { useMobile } from '../../lib/useMobile';
 
 const STATUS_OPTIONS = [
   { value: 'CONFIRMED', label: 'Confirmado' },
@@ -18,6 +19,7 @@ const STATUS_OPTIONS = [
 // Create OR edit an appointment: catalog service or a typed-on-the-spot
 // ad-hoc one, reschedule, client info, status — all in one overlay form.
 export function AppointmentForm({ open, onClose, appointmentId, defaults, onSaved }) {
+  const m = useMobile();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -137,20 +139,22 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,22,20,.4)', zIndex: 100,
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}
+      display: 'flex', alignItems: m ? 'stretch' : 'flex-start', justifyContent: 'center',
+      padding: m ? 0 : '5vh 16px', overflowY: 'auto' }}
       onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--surface-card)', borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-md)', width: '100%', maxWidth: '560px', padding: '32px' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--surface-card)',
+        borderRadius: m ? 0 : 'var(--radius-lg)', boxShadow: 'var(--shadow-md)', width: '100%',
+        maxWidth: m ? 'none' : '560px', minHeight: m ? '100vh' : 'auto', padding: m ? '22px 18px' : '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 300, fontSize: '1.5rem', color: 'var(--text-heading)' }}>
+          <h2 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 300, fontSize: m ? '1.3rem' : '1.5rem', color: 'var(--text-heading)' }}>
             {editing ? 'Editar agendamento' : 'Novo agendamento'}
           </h2>
-          <IconButton label="Fechar" variant="bare" size={36} onClick={onClose}><Icon name="x" size={18} /></IconButton>
+          <IconButton label="Fechar" variant="bare" size={m ? 40 : 36} onClick={onClose}><Icon name="x" size={18} /></IconButton>
         </div>
 
         {loading ? <p style={{ color: 'var(--text-muted)' }}>Carregando…</p> : (
           <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <Button type="button" size="sm" variant={mode === 'catalog' ? 'primary' : 'secondary'} onClick={() => setMode('catalog')}>Serviço do catálogo</Button>
               <Button type="button" size="sm" variant={mode === 'adhoc' ? 'primary' : 'secondary'} onClick={() => setMode('adhoc')}>Serviço avulso</Button>
             </div>
@@ -162,8 +166,8 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
                   options={services.map((s) => ({ value: s.id, label: `${s.name} · ${s.duration} · ${s.price}` }))} />
               </Field>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
-                <Field label="Nome do serviço" htmlFor="af-cname" required style={{ gridColumn: '1 / -1' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: m ? '1fr' : '1fr 1fr 1fr', gap: '14px' }}>
+                <Field label="Nome do serviço" htmlFor="af-cname" required style={m ? undefined : { gridColumn: '1 / -1' }}>
                   <Input id="af-cname" value={customServiceName} onChange={(e) => setCustomServiceName(e.target.value)} required />
                 </Field>
                 <Field label="Duração (min)" htmlFor="af-cdur" required>
@@ -175,7 +179,7 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: m ? '1fr' : '1fr 1fr', gap: '14px' }}>
               <Field label="Data" htmlFor="af-date" required>
                 <Input id="af-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
               </Field>
@@ -184,7 +188,7 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
               </Field>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: m ? '1fr' : '1fr 1fr', gap: '14px' }}>
               <Field label="Cliente" htmlFor="af-name" required>
                 <Input id="af-name" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
               </Field>
@@ -206,21 +210,37 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
             {conflict && (
               <div style={{ padding: '12px 16px', background: 'var(--nude-300)', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <span style={{ fontSize: 'var(--text-small)', color: 'var(--danger-500)' }}>Esse horário conflita com outro agendamento ou bloqueio.</span>
-                <Button type="button" size="sm" variant="secondary" onClick={() => submit(null, true)} disabled={saving}>Confirmar mesmo assim</Button>
+                <Button type="button" size="sm" variant="secondary" fullWidth={m} onClick={() => submit(null, true)} disabled={saving}>Confirmar mesmo assim</Button>
               </div>
             )}
             {error && <p style={{ margin: 0, color: 'var(--danger-500)', fontSize: 'var(--text-small)' }}>{error}</p>}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px', marginTop: '6px' }}>
-              {editing ? (
-                <Button type="button" variant="ghost" onClick={remove} disabled={deleting} iconLeft={<Icon name="trash" size={15} />}>
-                  {deleting ? 'Excluindo…' : 'Excluir'}
-                </Button>
-              ) : <span />}
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
-                <Button type="submit" disabled={saving}>{saving ? 'Salvando…' : 'Salvar'}</Button>
-              </div>
+            <div style={{ display: 'flex', flexDirection: m ? 'column' : 'row', justifyContent: 'space-between', alignItems: m ? 'stretch' : 'center', gap: m ? '20px' : '14px', marginTop: '6px' }}>
+              {m ? (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <Button type="submit" fullWidth disabled={saving}>{saving ? 'Salvando…' : 'Salvar'}</Button>
+                    <Button type="button" variant="secondary" fullWidth onClick={onClose}>Cancelar</Button>
+                  </div>
+                  {editing && (
+                    <Button type="button" variant="ghost" fullWidth onClick={remove} disabled={deleting} iconLeft={<Icon name="trash" size={15} />}>
+                      {deleting ? 'Excluindo…' : 'Excluir agendamento'}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {editing ? (
+                    <Button type="button" variant="ghost" onClick={remove} disabled={deleting} iconLeft={<Icon name="trash" size={15} />}>
+                      {deleting ? 'Excluindo…' : 'Excluir'}
+                    </Button>
+                  ) : <span />}
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+                    <Button type="submit" disabled={saving}>{saving ? 'Salvando…' : 'Salvar'}</Button>
+                  </div>
+                </>
+              )}
             </div>
           </form>
         )}

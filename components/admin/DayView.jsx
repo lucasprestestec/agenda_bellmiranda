@@ -15,7 +15,7 @@ const STATUS_COLOR = {
   CANCELLED: { bg: 'var(--nude-300)', fg: 'var(--text-muted)' },
 };
 
-export function DayView({ date, refreshToken, onEdit, onCreate }) {
+export function DayView({ date, refreshToken, onEdit, mobile }) {
   const [appointments, setAppointments] = useState([]);
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,12 +79,9 @@ export function DayView({ date, refreshToken, onEdit, onCreate }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '32px' : '40px' }}>
       <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <SectionLabel>Agendamentos</SectionLabel>
-          <Button size="sm" iconLeft={<Icon name="plus" size={14} />} onClick={() => onCreate(date)}>Novo agendamento</Button>
-        </div>
+        <SectionLabel>Agendamentos</SectionLabel>
         {loading ? (
           <p style={{ color: 'var(--text-muted)' }}>Carregando…</p>
         ) : appointments.length === 0 ? (
@@ -92,22 +89,22 @@ export function DayView({ date, refreshToken, onEdit, onCreate }) {
         ) : appointments.map((a) => {
           const color = STATUS_COLOR[a.status];
           return (
-            <Surface key={a.id} padding={20} elevation="xs">
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
+            <Surface key={a.id} padding={mobile ? 16 : 20} elevation="xs">
+              <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', gap: mobile ? '14px' : '20px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.375rem', color: 'var(--cocoa-800)' }}>
                     {a.startTime} – {a.endTime}
                   </span>
                   <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 'var(--text-body)' }}>{a.clientName} · {a.clientPhone}</span>
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>
-                    {a.service.name}{a.service.adhoc ? ' (avulso)' : ''} · {a.service.duration} · {a.service.price}
+                    {a.service.name}{a.service.adhoc ? ' (avulso)' : ''} · {a.service.duration} · {a.service.price || 'preço a definir'}
                   </span>
                   {a.note && <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>Obs: {a.note}</span>}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
+                <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'column', alignItems: mobile ? 'stretch' : 'flex-end', gap: '10px' }}>
+                  <span style={{ alignSelf: mobile ? 'flex-start' : 'flex-end', fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
                     padding: '4px 10px', borderRadius: 'var(--radius-pill)', background: color.bg, color: color.fg }}>{STATUS_LABEL[a.status]}</span>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
                     <Button size="sm" variant="ghost" onClick={() => onEdit(a.id)} iconLeft={<Icon name="pencil" size={14} />}>Editar</Button>
                     {a.status !== 'COMPLETED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'COMPLETED')}>Concluir</Button>}
                     {a.status !== 'CANCELLED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CANCELLED')}>Cancelar</Button>}
@@ -130,24 +127,24 @@ export function DayView({ date, refreshToken, onEdit, onCreate }) {
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)' }}>
               {b.startTime} – {b.endTime}{b.reason ? ` · ${b.reason}` : ''}
             </span>
-            <IconButton label="Remover bloqueio" variant="bare" size={32} onClick={() => removeBlock(b.id)}>
+            <IconButton label="Remover bloqueio" variant="bare" size={mobile ? 40 : 32} onClick={() => removeBlock(b.id)}>
               <Icon name="trash" size={15} />
             </IconButton>
           </div>
         ))}
 
-        <Surface padding={20} elevation="none">
-          <form onSubmit={addBlock} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.4fr auto', gap: '14px', alignItems: 'end' }}>
+        <Surface padding={mobile ? 16 : 20} elevation="none">
+          <form onSubmit={addBlock} style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr 1fr' : '1fr 1fr 1.4fr auto', gap: '14px', alignItems: 'end' }}>
             <Field label="Início" htmlFor="block-start">
               <Input id="block-start" type="time" value={blockStart} onChange={(e) => setBlockStart(e.target.value)} required />
             </Field>
             <Field label="Fim" htmlFor="block-end">
               <Input id="block-end" type="time" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} required />
             </Field>
-            <Field label="Motivo" htmlFor="block-reason" hint="Opcional">
+            <Field label="Motivo" htmlFor="block-reason" hint="Opcional" style={mobile ? { gridColumn: '1 / -1' } : undefined}>
               <Input id="block-reason" value={blockReason} onChange={(e) => setBlockReason(e.target.value)} placeholder="Almoço, compromisso…" />
             </Field>
-            <Button type="submit" iconLeft={<Icon name="ban" size={15} />}>Bloquear</Button>
+            <Button type="submit" fullWidth={mobile} iconLeft={<Icon name="ban" size={15} />} style={mobile ? { gridColumn: '1 / -1' } : undefined}>Bloquear</Button>
           </form>
           {blockError && <p style={{ margin: '10px 0 0', color: 'var(--danger-500)', fontSize: 'var(--text-small)' }}>{blockError}</p>}
         </Surface>
