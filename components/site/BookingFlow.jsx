@@ -37,13 +37,15 @@ function dayShortFor(days, value) {
   return d ? `${d.day} · ${d.weekday}` : '—';
 }
 
-export function BookingFlow({ services, initialServiceSlug, layout = 'desktop' }) {
+export function BookingFlow({ services: allServices, initialServiceSlug, layout = 'desktop' }) {
+  const services = useMemo(() => allServices.filter((s) => s.bookable), [allServices]);
   const forcedMobile = layout === 'mobile';
   const viewportMobile = useMobile();
   const narrow = useMobile(430);
   const mobile = forcedMobile || viewportMobile;
 
-  const [svcSlug, setSvcSlug] = useState(initialServiceSlug || services[0]?.slug);
+  const initialBookable = services.find((s) => s.slug === initialServiceSlug) ? initialServiceSlug : services[0]?.slug;
+  const [svcSlug, setSvcSlug] = useState(initialBookable);
   const service = useMemo(() => services.find((s) => s.slug === svcSlug) || services[0], [services, svcSlug]);
   const serviceIndex = services.indexOf(service);
 
@@ -102,8 +104,11 @@ export function BookingFlow({ services, initialServiceSlug, layout = 'desktop' }
 
   if (!service) {
     return (
-      <section id="agendar" style={{ padding: 'var(--section-y) var(--gutter)', textAlign: 'center', color: 'var(--text-muted)' }}>
-        Nenhum serviço disponível no momento.
+      <section id="agendar" style={{ padding: 'var(--section-y) var(--gutter)', textAlign: 'center' }}>
+        <p style={{ margin: '0 auto 20px', maxWidth: '46ch', color: 'var(--ink-500)', fontFamily: 'var(--font-sans)' }}>
+          O agendamento online ainda está sendo configurado. Fale com a gente pelo WhatsApp para marcar seu horário.
+        </p>
+        <Button variant="whatsapp" href={SITE.whatsappHref} iconLeft={<Icon name="message-circle" size={15} />}>Falar no WhatsApp</Button>
       </section>
     );
   }

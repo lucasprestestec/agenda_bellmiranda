@@ -29,6 +29,9 @@ export async function POST(request) {
 
   const service = await getServiceBySlug(serviceSlug);
   if (!service) return NextResponse.json({ error: 'Serviço não encontrado.' }, { status: 404 });
+  if (service.durationMin == null) {
+    return NextResponse.json({ error: 'Serviço ainda não está disponível para agendamento online.' }, { status: 409 });
+  }
 
   const available = await isSlotStillAvailable({ dateISO: date, startTime, durationMin: service.durationMin });
   if (!available) {

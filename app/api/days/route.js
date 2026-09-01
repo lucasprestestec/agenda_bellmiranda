@@ -9,6 +9,9 @@ export async function GET(request) {
 
   const service = await getServiceBySlug(slug);
   if (!service) return NextResponse.json({ error: 'Serviço não encontrado.' }, { status: 404 });
+  if (service.durationMin == null) {
+    return NextResponse.json({ error: 'Serviço ainda não está disponível para agendamento online.' }, { status: 409 });
+  }
 
   const days = await listAvailableDays({ durationMin: service.durationMin, from, count: 14 });
   return NextResponse.json({ days });

@@ -3,13 +3,18 @@
 import { useRouter } from 'next/navigation';
 import { useMobile } from '../../lib/useMobile';
 
-function ServiceLine({ index, name, description, duration, price, last, mobile, onSelect }) {
+function ServiceLine({ index, name, description, duration, price, bookable, last, mobile, onSelect }) {
   const [cur, val] = price.split(/\s+/);
   const priceBlock = (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: mobile ? '12px' : '14px',
       paddingTop: mobile ? 0 : '10px', whiteSpace: 'nowrap' }}>
-      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--ink-500)' }}>{duration}</span>
-      <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--taupe-500)' }}></span>
+      {duration && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--ink-500)' }}>{duration}</span>}
+      {duration && <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--taupe-500)' }}></span>}
+      {!bookable && (
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9px', fontWeight: 600, letterSpacing: '0.12em',
+          textTransform: 'uppercase', color: 'var(--champagne-600)', border: '1px solid var(--champagne-500)',
+          borderRadius: '999px', padding: '3px 9px' }}>Em breve</span>
+      )}
       <span style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
         <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1rem', color: 'var(--champagne-600)' }}>{cur}</span>
         <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: mobile ? '1.75rem' : 'clamp(1.9rem,2.6vw,2.5rem)',
@@ -18,7 +23,7 @@ function ServiceLine({ index, name, description, duration, price, last, mobile, 
     </div>
   );
   const content = mobile ? (
-    <div style={{ padding: '24px 0', borderBottom: last ? 'none' : '1px solid var(--border-hairline)', cursor: 'pointer' }}>
+    <div style={{ padding: '24px 0', borderBottom: last ? 'none' : '1px solid var(--border-hairline)', cursor: bookable ? 'pointer' : 'default' }}>
       <div style={{ display: 'flex', gap: '14px', alignItems: 'baseline' }}>
         <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.0625rem', color: 'var(--champagne-500)' }}>{index}</span>
         <h3 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 400,
@@ -30,7 +35,7 @@ function ServiceLine({ index, name, description, duration, price, last, mobile, 
     </div>
   ) : (
     <div style={{ display: 'grid', gridTemplateColumns: '62px 1fr auto', alignItems: 'start',
-      gap: '0 clamp(12px,2vw,28px)', padding: 'clamp(24px,2.6vw,34px) 0', cursor: 'pointer',
+      gap: '0 clamp(12px,2vw,28px)', padding: 'clamp(24px,2.6vw,34px) 0', cursor: bookable ? 'pointer' : 'default',
       borderBottom: last ? 'none' : '1px solid var(--border-hairline)' }}>
       <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.25rem', color: 'var(--champagne-500)',
         paddingTop: '6px', letterSpacing: '0.02em' }}>{index}</span>
@@ -43,7 +48,7 @@ function ServiceLine({ index, name, description, duration, price, last, mobile, 
       {priceBlock}
     </div>
   );
-  return <div onClick={onSelect}>{content}</div>;
+  return <div onClick={bookable ? onSelect : undefined}>{content}</div>;
 }
 
 export function ServiceList({ services }) {
@@ -53,7 +58,7 @@ export function ServiceList({ services }) {
     <div>
       {services.map((s, i) => (
         <ServiceLine key={s.slug} index={'0' + (i + 1)} name={s.name} description={s.description}
-          duration={s.duration} price={s.price} mobile={m} last={i === services.length - 1}
+          duration={s.duration} price={s.price} bookable={s.bookable} mobile={m} last={i === services.length - 1}
           onSelect={() => router.push(`/agendar?servico=${s.slug}`)} />
       ))}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', paddingTop: '22px',

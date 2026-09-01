@@ -2,72 +2,124 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Placeholder catalog — from the design kit's Services.jsx (source of truth).
-// Real prices/durations to be confirmed by the studio; see project/readme.md.
+// Real catalog from the studio (2026-08-30). Durations are not set yet —
+// Bell fills those in from /admin before a service becomes bookable online.
 const SERVICES = [
-  {
-    slug: 'cuticula-esmaltacao',
-    name: 'Cutícula + esmaltação',
-    description: 'Higienização, cutícula feita com cuidado e esmalte da sua escolha.',
-    durationMin: 70,
-    priceCents: 9000,
-    tags: 'Especialidade',
-    order: 0,
-  },
   {
     slug: 'alongamento-gel',
     name: 'Alongamento em gel',
     description: 'Estrutura leve e natural, com acabamento espelhado e curva perfeita.',
-    durationMin: 150,
     priceCents: 18000,
     tags: 'Especialidade',
+    order: 0,
+  },
+  {
+    slug: 'manutencao-gel',
+    name: 'Manutenção (gel)',
+    description: 'Reequilíbrio, blindagem e novo acabamento do alongamento em gel.',
+    priceCents: 16000,
     order: 1,
+  },
+  {
+    slug: 'mao',
+    name: 'Mão',
+    description: 'Cuidado completo para as mãos.',
+    priceCents: 8500,
+    order: 2,
+  },
+  {
+    slug: 'pe',
+    name: 'Pé',
+    description: 'Cuidado completo para os pés.',
+    priceCents: 9500,
+    order: 3,
   },
   {
     slug: 'alongamento-fibra',
     name: 'Alongamento em fibra de vidro',
     description: 'Indicado para quem quer resistência com aparência fininha.',
-    durationMin: 165,
-    priceCents: 19000,
-    order: 2,
-  },
-  {
-    slug: 'manutencao-alongamento',
-    name: 'Manutenção de alongamento',
-    description: 'Reequilíbrio, blindagem e novo acabamento.',
-    durationMin: 120,
-    priceCents: 13000,
-    priceNote: 'a cada 3 semanas',
-    order: 3,
-  },
-  {
-    slug: 'nail-design-autoral',
-    name: 'Nail design autoral',
-    description: 'Desenho feito à mão, combinado com você antes de começar.',
-    durationMin: 40,
-    priceCents: 4500,
-    priceNote: 'a partir de',
+    priceCents: 20000,
+    tags: 'Especialidade',
     order: 4,
   },
   {
-    slug: 'blindagem-unhas-naturais',
-    name: 'Blindagem de unhas naturais',
-    description: 'Para fortalecer sem alongar.',
-    durationMin: 60,
-    priceCents: 11000,
+    slug: 'manutencao-fibra',
+    name: 'Manutenção (fibra)',
+    description: 'Reequilíbrio, blindagem e novo acabamento do alongamento em fibra.',
+    priceCents: 16000,
     order: 5,
+  },
+  {
+    slug: 'banho-gel',
+    name: 'Banho de gel',
+    description: 'Reforço e acabamento espelhado sobre a unha natural.',
+    priceCents: 16000,
+    order: 6,
+  },
+  {
+    slug: 'reconstrucao-unha-pe',
+    name: 'Reconstrução de unha do pé',
+    description: 'Reconstrução pontual de unha danificada ou quebrada.',
+    priceCents: 2500,
+    priceNote: 'cada unha',
+    order: 7,
+  },
+  {
+    slug: 'pe-mao-tradicional',
+    name: 'Pé e mão tradicional',
+    description: 'Cuidado tradicional completo para mãos e pés.',
+    priceCents: 6500,
+    order: 8,
+  },
+  {
+    slug: 'so-mao',
+    name: 'Só mão',
+    description: 'Manicure tradicional.',
+    priceCents: 3700,
+    order: 9,
+  },
+  {
+    slug: 'so-pe',
+    name: 'Só pé',
+    description: 'Pedicure tradicional.',
+    priceCents: 4200,
+    order: 10,
+  },
+  {
+    slug: 'spa-pes',
+    name: 'Spa dos pés',
+    description: 'Esfoliação, hidratação profunda e relaxamento para os pés.',
+    priceCents: 12000,
+    order: 11,
+  },
+  {
+    slug: 'postica-realista',
+    name: 'Postiça realista',
+    description: 'Unha postiça com acabamento natural e realista.',
+    priceCents: 12000,
+    order: 12,
   },
 ];
 
 async function main() {
+  const keepSlugs = SERVICES.map((s) => s.slug);
+
   for (const service of SERVICES) {
     await prisma.service.upsert({
       where: { slug: service.slug },
-      create: service,
-      update: service,
+      create: { ...service, active: true },
+      update: { ...service, active: true },
     });
   }
-  console.log(`Seeded ${SERVICES.length} services.`);
+
+  // Retire any previous catalog entries not in this list (deactivate, not
+  // delete, so past appointments keep their service reference intact).
+  const retired = await prisma.service.updateMany({
+    where: { slug: { notIn: keepSlugs } },
+    data: { active: false },
+  });
+
+  console.log(`Seeded ${SERVICES.length} services. Retired ${retired.count} old ones.`);
 }
 
 main()

@@ -10,6 +10,9 @@ export async function GET(request) {
 
   const service = await getServiceBySlug(slug);
   if (!service) return NextResponse.json({ error: 'Serviço não encontrado.' }, { status: 404 });
+  if (service.durationMin == null) {
+    return NextResponse.json({ error: 'Serviço ainda não está disponível para agendamento online.' }, { status: 409 });
+  }
 
   const slots = await listSlotsForDay({ dateISO: date, durationMin: service.durationMin });
   return NextResponse.json({ slots });
