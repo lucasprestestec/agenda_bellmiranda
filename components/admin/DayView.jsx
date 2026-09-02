@@ -15,6 +15,9 @@ const STATUS_COLOR = {
   CANCELLED: { bg: 'var(--nude-300)', fg: 'var(--text-muted)' },
 };
 
+const FULL_DAY_START = '00:00';
+const FULL_DAY_END = '23:59';
+
 export function DayView({ date, refreshToken, onEdit, mobile }) {
   const [appointments, setAppointments] = useState([]);
   const [blockedSlots, setBlockedSlots] = useState([]);
@@ -23,6 +26,9 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
   const [blockEnd, setBlockEnd] = useState('');
   const [blockReason, setBlockReason] = useState('');
   const [blockError, setBlockError] = useState(null);
+  const [dayBlockOpen, setDayBlockOpen] = useState(false);
+  const [dayBlockReason, setDayBlockReason] = useState('');
+  const [dayBlockError, setDayBlockError] = useState(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -78,6 +84,23 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
     load();
   }
 
+  async function confirmDayBlock(e) {
+    e.preventDefault();
+    setDayBlockError(null);
+    const res = await fetch('/api/admin/blocked-slots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, startTime: FULL_DAY_START, endTime: FULL_DAY_END, reason: dayBlockReason }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setDayBlockError(data.error || 'Não foi possível fechar o dia.'); return; }
+    setDayBlockOpen(false); setDayBlockReason('');
+    load();
+  }
+
+  const fullDayBlock = blockedSlots.find((b) => b.startTime === FULL_DAY_START && b.endTime === FULL_DAY_END);
+  const partialBlocks = blockedSlots.filter((b) => b !== fullDayBlock);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '32px' : '40px' }}>
       <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -120,9 +143,34 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <SectionLabel>Horários bloqueados</SectionLabel>
-        {blockedSlots.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-small)' }}>Nenhum bloqueio neste dia.</p>
-        ) : blockedSlots.map((b) => (
+
+        {fullDayBlock ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap',
+            padding: '14px 16px', background: 'var(--warning-100)', borderRadius: 'var(--radius-sm)' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', fontWeight: 500, color: 'var(--cocoa-800)' }}>
+              <Icon name="lock" size={15} />
+              Dia fechado{fullDayBlock.reason ? ` · ${fullDayBlock.reason}` : ''}
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => removeBlock(fullDayBlock.id)}>Reabrir dia</Button>
+          </div>
+        ) : dayBlockOpen ? (
+          <Surface padding={mobile ? 16 : 20} elevation="none">
+            <form onSubmit={confirmDayBlock} style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'end' }}>
+              <Field label="Motivo" htmlFor="day-block-reason" hint="Opcional" style={{ flex: 1, minWidth: '180px' }}>
+                <Input id="day-block-reason" value={dayBlockReason} onChange={(e) => setDayBlockReason(e.target.value)} placeholder="Feriado, viagem…" />
+              </Field>
+              <Button type="submit" size="sm">Confirmar</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => { setDayBlockOpen(false); setDayBlockReason(''); }}>Cancelar</Button>
+            </form>
+            {dayBlockError && <p style={{ margin: '10px 0 0', color: 'var(--danger-500)', fontSize: 'var(--text-small)' }}>{dayBlockError}</p>}
+          </Surface>
+        ) : (
+          <Button size="sm" variant="secondary" iconLeft={<Icon name="lock" size={14} />} onClick={() => setDayBlockOpen(true)}>Bloquear dia inteiro</Button>
+        )}
+
+        {partialBlocks.length === 0 ? (
+          fullDayBlock ? null : <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-small)' }}>Nenhum bloqueio neste dia.</p>
+        ) : partialBlocks.map((b) => (
           <div key={b.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
             padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-sm)' }}>
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)' }}>
@@ -134,21 +182,23 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
           </div>
         ))}
 
-        <Surface padding={mobile ? 16 : 20} elevation="none">
-          <form onSubmit={addBlock} style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr 1fr' : '1fr 1fr 1.4fr auto', gap: '14px', alignItems: 'end' }}>
-            <Field label="Início" htmlFor="block-start">
-              <Input id="block-start" type="time" value={blockStart} onChange={(e) => setBlockStart(e.target.value)} required />
-            </Field>
-            <Field label="Fim" htmlFor="block-end">
-              <Input id="block-end" type="time" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} required />
-            </Field>
-            <Field label="Motivo" htmlFor="block-reason" hint="Opcional" style={mobile ? { gridColumn: '1 / -1' } : undefined}>
-              <Input id="block-reason" value={blockReason} onChange={(e) => setBlockReason(e.target.value)} placeholder="Almoço, compromisso…" />
-            </Field>
-            <Button type="submit" fullWidth={mobile} iconLeft={<Icon name="ban" size={15} />} style={mobile ? { gridColumn: '1 / -1' } : undefined}>Bloquear</Button>
-          </form>
-          {blockError && <p style={{ margin: '10px 0 0', color: 'var(--danger-500)', fontSize: 'var(--text-small)' }}>{blockError}</p>}
-        </Surface>
+        {!fullDayBlock && (
+          <Surface padding={mobile ? 16 : 20} elevation="none">
+            <form onSubmit={addBlock} style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr 1fr' : '1fr 1fr 1.4fr auto', gap: '14px', alignItems: 'end' }}>
+              <Field label="Início" htmlFor="block-start">
+                <Input id="block-start" type="time" value={blockStart} onChange={(e) => setBlockStart(e.target.value)} required />
+              </Field>
+              <Field label="Fim" htmlFor="block-end">
+                <Input id="block-end" type="time" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} required />
+              </Field>
+              <Field label="Motivo" htmlFor="block-reason" hint="Opcional" style={mobile ? { gridColumn: '1 / -1' } : undefined}>
+                <Input id="block-reason" value={blockReason} onChange={(e) => setBlockReason(e.target.value)} placeholder="Almoço, compromisso…" />
+              </Field>
+              <Button type="submit" fullWidth={mobile} iconLeft={<Icon name="ban" size={15} />} style={mobile ? { gridColumn: '1 / -1' } : undefined}>Bloquear</Button>
+            </form>
+            {blockError && <p style={{ margin: '10px 0 0', color: 'var(--danger-500)', fontSize: 'var(--text-small)' }}>{blockError}</p>}
+          </Surface>
+        )}
       </section>
     </div>
   );

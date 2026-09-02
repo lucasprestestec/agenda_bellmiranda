@@ -70,7 +70,9 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
                   })}
                 </div>
               )}
-              {dayData?.blockedCount > 0 && (
+              {dayData?.closed ? (
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--warning-500)' }}>Fechado</span>
+              ) : dayData?.blockedCount > 0 && (
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{dayData.blockedCount} bloqueio(s)</span>
               )}
               <Button size="sm" variant="secondary" fullWidth iconLeft={<Icon name="plus" size={14} />} onClick={() => onCreateAt(iso)}>Novo agendamento</Button>
@@ -113,7 +115,9 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
                   </button>
                 );
               })}
-              {dayData?.blockedCount > 0 && (
+              {dayData?.closed ? (
+                <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--warning-500)' }}>Fechado</span>
+              ) : dayData?.blockedCount > 0 && (
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{dayData.blockedCount} bloqueio(s)</span>
               )}
             </div>

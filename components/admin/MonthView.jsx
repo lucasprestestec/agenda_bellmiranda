@@ -50,7 +50,9 @@ export function MonthView({ monthDate, refreshToken, today, onSelectDay, mobile 
               {!mobile && appts.length > 0 && (
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{appts.length} agend.</span>
               )}
-              {!mobile && dayData?.blockedCount > 0 && (
+              {dayData?.closed ? (
+                <span style={{ fontSize: mobile ? '9px' : '10px', fontWeight: 600, color: 'var(--warning-500)' }}>Fechado</span>
+              ) : !mobile && dayData?.blockedCount > 0 && (
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{dayData.blockedCount} bloqueio(s)</span>
               )}
             </button>

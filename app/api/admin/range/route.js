@@ -25,7 +25,7 @@ export async function GET(request) {
 
   const byDate = {};
   for (const a of appointments) {
-    (byDate[a.date] ||= { appointments: [], blockedCount: 0 }).appointments.push({
+    (byDate[a.date] ||= { appointments: [], blockedCount: 0, closed: false }).appointments.push({
       id: a.id,
       startTime: a.startTime,
       endTime: a.endTime,
@@ -35,7 +35,9 @@ export async function GET(request) {
     });
   }
   for (const b of blockedSlots) {
-    (byDate[b.date] ||= { appointments: [], blockedCount: 0 }).blockedCount += 1;
+    const day = (byDate[b.date] ||= { appointments: [], blockedCount: 0, closed: false });
+    day.blockedCount += 1;
+    if (b.startTime === '00:00' && b.endTime === '23:59') day.closed = true;
   }
 
   return NextResponse.json({ days: byDate });
