@@ -67,6 +67,45 @@ confirmed by the studio**:
 - Lucide is a substituted icon set (no Instagram brand icon in the current
   package — `Camera` stands in for it in `components/core/Icon.jsx`)
 
+## WhatsApp automation
+
+Three messages are sent automatically via the WhatsApp Cloud API (Meta's
+official Business Platform), all through `lib/whatsapp/send.js`:
+
+| When | What | Where it's triggered |
+| --- | --- | --- |
+| Right after booking | Confirmation to the client | `after()` in `POST /api/appointments`, fire-and-forget so a WhatsApp outage never blocks the booking |
+| Evening before (21:00 UTC / 18:00 BRT) | Reminder to clients who opted in (`wantsReminder`) | Vercel Cron → `GET /api/cron/reminders` |
+| Morning (10:00 UTC / 07:00 BRT) | Today's agenda summary, sent to Bell's own number | Vercel Cron → `GET /api/cron/daily-summary` |
+
+`Appointment.confirmationSentAt` / `.reminderSentAt` guard against duplicate
+sends if a cron run overlaps or retries.
+
+**The real Meta number isn't connected yet.** `WHATSAPP_PROVIDER` defaults to
+`mock` (`lib/whatsapp/providers/mock.js`), which just logs the message that
+would have been sent — the whole pipeline (schema, triggers, cron) is fully
+testable without live credentials. To go live:
+
+1. Create a WhatsApp Business Account + phone number in Meta Business
+   Manager (Cloud API) — see `lib/whatsapp/providers/meta.js` for the
+   `WHATSAPP_ACCESS_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` it expects.
+2. Create and get approved the three message templates referenced in
+   `lib/whatsapp/templates.js` (`confirmacao_agendamento`,
+   `lembrete_agendamento`, `resumo_diario`, language `pt_BR`) — names,
+   language, and variable order/count must match exactly.
+3. Set `WHATSAPP_PROVIDER=meta` plus the two credentials above, and
+   `CRON_SECRET` (Vercel sets the `Authorization: Bearer` header on cron
+   requests automatically once this env var exists — see
+   [Securing Cron Jobs](https://vercel.com/docs/cron-jobs/manage-cron-jobs#securing-cron-jobs)).
+4. Decide whether `(15) 98154-5597` (`lib/site-config.js`) becomes the API
+   number directly (Meta's app+API "coexistence" keeps the WhatsApp Business
+   app usable on the same number) or a separate number is used just for
+   automated sends.
+
+Vercel Hobby cron jobs run at most once/day per job and the exact minute can
+drift up to ~1h — fine for a once-daily reminder/summary, not for
+"N hours before" precision without a Pro plan or an external scheduler.
+
 ## Admin auth
 
 Single shared password (this is a one-person studio, not a multi-user app).

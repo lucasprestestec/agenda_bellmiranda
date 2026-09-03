@@ -42,6 +42,11 @@ model Appointment {
   status        String   @default("CONFIRMED")
   createdAt     DateTime @default(now())
 
+  // Set once the corresponding WhatsApp message is sent — guards against
+  // double-sends (cron re-runs, retries) and lets /admin show send status.
+  confirmationSentAt DateTime?
+  reminderSentAt     DateTime?
+
   @@index([date])
 }
 

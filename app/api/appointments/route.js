@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { getServiceBySlug, toServiceView } from '../../../lib/services';
 import { isSlotStillAvailable } from '../../../lib/availability';
 import { toMinutes, toHHMM, DEPOSIT_RATE, APPOINTMENT_STATUS } from '../../../lib/studio';
+import { sendAppointmentConfirmation } from '../../../lib/whatsapp/send';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -63,6 +64,15 @@ export async function POST(request) {
   }
 
   const serviceView = toServiceView(service);
+
+  // Runs after the response is sent — keeps the booking fast without letting
+  // Vercel freeze the function before the WhatsApp send completes.
+  after(() =>
+    sendAppointmentConfirmation(appointment, serviceView).catch((err) => {
+      console.error('Falha ao enviar confirmação por WhatsApp:', err);
+    })
+  );
+
   return NextResponse.json({
     appointment: {
       id: appointment.id,
