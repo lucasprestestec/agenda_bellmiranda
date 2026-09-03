@@ -177,7 +177,7 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
           height: 'clamp(220px,26vw,330px)', backgroundPosition: 'center 30%' }}></div>
       )}
       <div style={{ position: 'relative', maxWidth: 'var(--container)', margin: '0 auto', padding: mobile ? 0 : '0 var(--gutter)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.16fr .84fr',
+        <div style={{ display: 'grid', gridTemplateColumns: mobile ? 'minmax(0,1fr)' : 'minmax(0,1.16fr) minmax(0,.84fr)',
           gap: mobile ? '28px' : 'clamp(28px,4vw,60px)', alignItems: 'start' }}>
 
           <div>
@@ -194,45 +194,51 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
             </p>
 
             <div style={Object.assign({}, capsLabel, { display: 'block', margin: 'clamp(34px,4vw,52px) 0 18px' })}>Escolha seu serviço</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '8px' : '12px' }}>
               {services.map((s, i) => {
                 const on = svcSlug === s.slug;
                 return (
                   <button key={s.slug} onClick={() => { setSvcSlug(s.slug); setDetails(false); }}
                     style={{ cursor: 'pointer', textAlign: 'left', display: 'grid',
-                      gridTemplateColumns: mobile ? '26px 1fr' : '26px 1fr auto auto',
-                      alignItems: mobile ? 'start' : 'center', gap: mobile ? '0 14px' : '0 clamp(14px,2vw,30px)',
-                      padding: 'clamp(20px,2vw,26px) clamp(18px,2vw,26px)',
+                      gridTemplateColumns: mobile ? '18px 1fr auto' : '26px 1fr auto auto',
+                      alignItems: 'center', gap: mobile ? '0 12px' : '0 clamp(14px,2vw,30px)',
+                      padding: mobile ? '14px 16px' : 'clamp(20px,2vw,26px) clamp(18px,2vw,26px)',
                       background: on ? 'rgba(184,149,109,.06)' : 'transparent',
                       border: '1px solid ' + (on ? 'var(--champagne-500)' : 'var(--border-hairline)') }}>
-                    <span style={{ width: '20px', height: '20px', borderRadius: '50%', marginTop: mobile ? '5px' : 0,
+                    <span style={{ width: mobile ? '18px' : '20px', height: mobile ? '18px' : '20px', borderRadius: '50%', flexShrink: 0,
                       border: '1px solid ' + (on ? 'var(--espresso-900)' : 'var(--border-strong)'),
                       display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {on && <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--espresso-900)' }}></span>}
+                      {on && <span style={{ width: mobile ? '8px' : '10px', height: mobile ? '8px' : '10px', borderRadius: '50%', background: 'var(--espresso-900)' }}></span>}
                     </span>
-                    <span>
-                      <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontWeight: 400,
-                        fontSize: '1.3125rem', color: 'var(--ink-900)' }}>{s.name}</span>
-                      <span style={{ display: 'block', marginTop: '6px', fontFamily: 'var(--font-sans)',
-                        fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--ink-500)', maxWidth: '40ch' }}>{s.description}</span>
-                      {mobile && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--ink-500)',
-                            fontFamily: 'var(--font-sans)', fontSize: '0.8125rem' }}><Icon name="clock" size={13} /> {s.duration}</span>
-                          <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--taupe-500)' }}></span>
-                          <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.25rem', color: 'var(--ink-900)' }}>{s.price}</span>
-                        </span>
-                      )}
-                    </span>
-                    {!mobile && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ink-500)',
-                        fontFamily: 'var(--font-sans)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-                        <Icon name="clock" size={14} /> {s.duration}
+                    {mobile ? (
+                      <span style={{ fontFamily: 'var(--font-serif-display)', fontWeight: 400,
+                        fontSize: '1rem', lineHeight: 1.3, color: 'var(--ink-900)' }}>{s.name}</span>
+                    ) : (
+                      <span>
+                        <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontWeight: 400,
+                          fontSize: '1.3125rem', color: 'var(--ink-900)' }}>{s.name}</span>
+                        <span style={{ display: 'block', marginTop: '6px', fontFamily: 'var(--font-sans)',
+                          fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--ink-500)', maxWidth: '40ch' }}>{s.description}</span>
                       </span>
                     )}
-                    {!mobile && (
-                      <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.375rem',
-                        color: 'var(--ink-900)', whiteSpace: 'nowrap', minWidth: '84px', textAlign: 'right' }}>{s.price}</span>
+                    {mobile ? (
+                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--ink-500)',
+                          fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>
+                          <Icon name="clock" size={11} /> {s.duration}
+                        </span>
+                        <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.0625rem',
+                          color: 'var(--ink-900)', whiteSpace: 'nowrap' }}>{s.price}</span>
+                      </span>
+                    ) : (
+                      <>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ink-500)',
+                          fontFamily: 'var(--font-sans)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                          <Icon name="clock" size={14} /> {s.duration}
+                        </span>
+                        <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.375rem',
+                          color: 'var(--ink-900)', whiteSpace: 'nowrap', minWidth: '84px', textAlign: 'right' }}>{s.price}</span>
+                      </>
                     )}
                   </button>
                 );
@@ -287,10 +293,12 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
                     <span style={{ color: 'var(--champagne-600)', lineHeight: 0 }}><Icon name="calendar" size={15} /></span>
                     <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.125rem' }}>{loadingDays ? 'Carregando…' : dayLabel}</span>
                   </span>
-                  <button onClick={() => setDateOpen(!dateOpen)} style={ghostAction}>Alterar <Icon name="pencil" size={12} /></button>
+                  {!mobile && (
+                    <button onClick={() => setDateOpen(!dateOpen)} style={ghostAction}>Alterar <Icon name="pencil" size={12} /></button>
+                  )}
                 </div>
-                {dateOpen && (
-                  <div style={{ paddingTop: '6px' }}>
+                {(mobile || dateOpen) && (
+                  <div style={{ paddingTop: '6px', minWidth: 0 }}>
                     {days.length > 0 && (() => {
                       const [y, mo] = days[0].value.split('-');
                       const monthLabel = `${MONTH_LABELS[Number(mo) - 1]} ${y}`;
@@ -300,12 +308,12 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
                 <span style={capsLabel}>Horário</span>
                 {loadingSlots ? (
                   <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--ink-500)' }}>Carregando horários…</p>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: narrow ? 'repeat(3,1fr)' : 'repeat(4,1fr)', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: narrow ? 'repeat(3,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))', gap: '10px' }}>
                     {slots.map((s) => {
                       const on = time === s.value;
                       return (

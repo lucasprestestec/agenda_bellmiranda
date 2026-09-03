@@ -3,11 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useMobile } from '../../lib/useMobile';
 
-function ServiceLine({ index, name, description, duration, price, bookable, last, mobile, onSelect }) {
+function PriceBlock({ duration, price, bookable }) {
   const [cur, val] = price ? price.split(/\s+/) : [null, null];
-  const priceBlock = (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: mobile ? '12px' : '14px',
-      paddingTop: mobile ? 0 : '10px', whiteSpace: 'nowrap' }}>
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', whiteSpace: 'nowrap' }}>
       {duration && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--ink-500)' }}>{duration}</span>}
       {duration && <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: 'var(--taupe-500)' }}></span>}
       {!bookable && (
@@ -18,7 +17,7 @@ function ServiceLine({ index, name, description, duration, price, bookable, last
       {price ? (
         <span style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
           <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1rem', color: 'var(--champagne-600)' }}>{cur}</span>
-          <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: mobile ? '1.75rem' : 'clamp(1.9rem,2.6vw,2.5rem)',
+          <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: 'clamp(1.9rem,2.6vw,2.5rem)',
             fontWeight: 300, lineHeight: 1, color: 'var(--champagne-600)' }}>{val}</span>
         </span>
       ) : (
@@ -26,21 +25,14 @@ function ServiceLine({ index, name, description, duration, price, bookable, last
       )}
     </div>
   );
-  const content = mobile ? (
-    <div style={{ padding: '24px 0', borderBottom: last ? 'none' : '1px solid var(--border-hairline)', cursor: bookable ? 'pointer' : 'default' }}>
-      <div style={{ display: 'flex', gap: '14px', alignItems: 'baseline' }}>
-        <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.0625rem', color: 'var(--champagne-500)' }}>{index}</span>
-        <h3 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 400,
-          fontSize: '1.4375rem', lineHeight: 1.22, color: 'var(--ink-900)' }}>{name}</h3>
-      </div>
-      <p style={{ margin: '10px 0 0', paddingLeft: '32px', fontFamily: 'var(--font-sans)', fontSize: '0.9375rem',
-        lineHeight: 1.7, color: 'var(--ink-500)' }}>{description}</p>
-      <div style={{ paddingLeft: '32px', marginTop: '14px' }}>{priceBlock}</div>
-    </div>
-  ) : (
-    <div style={{ display: 'grid', gridTemplateColumns: '62px 1fr auto', alignItems: 'start',
-      gap: '0 clamp(12px,2vw,28px)', padding: 'clamp(24px,2.6vw,34px) 0', cursor: bookable ? 'pointer' : 'default',
-      borderBottom: last ? 'none' : '1px solid var(--border-hairline)' }}>
+}
+
+function ServiceLine({ index, name, description, duration, price, bookable, last, onSelect }) {
+  return (
+    <div onClick={bookable ? onSelect : undefined}
+      style={{ display: 'grid', gridTemplateColumns: '62px 1fr auto', alignItems: 'start',
+        gap: '0 clamp(12px,2vw,28px)', padding: 'clamp(24px,2.6vw,34px) 0', cursor: bookable ? 'pointer' : 'default',
+        borderBottom: last ? 'none' : '1px solid var(--border-hairline)' }}>
       <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.25rem', color: 'var(--champagne-500)',
         paddingTop: '6px', letterSpacing: '0.02em' }}>{index}</span>
       <div style={{ minWidth: 0 }}>
@@ -49,28 +41,67 @@ function ServiceLine({ index, name, description, duration, price, bookable, last
         <p style={{ margin: '10px 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.9375rem', lineHeight: 1.7,
           color: 'var(--ink-500)', maxWidth: '42ch' }}>{description}</p>
       </div>
-      {priceBlock}
+      <div style={{ paddingTop: '10px' }}><PriceBlock duration={duration} price={price} bookable={bookable} /></div>
     </div>
   );
-  return <div onClick={bookable ? onSelect : undefined}>{content}</div>;
+}
+
+// Compact mobile card: name + a 2-line taste of the description + price, so
+// browsing 13 services doesn't mean scrolling through 13 full write-ups —
+// that's what the booking picker's row list is for once you commit to one.
+function ServiceCard({ index, name, description, duration, price, bookable, onSelect }) {
+  return (
+    <div onClick={bookable ? onSelect : undefined}
+      style={{ flex: '0 0 auto', width: '74vw', maxWidth: '280px', cursor: bookable ? 'pointer' : 'default',
+        background: 'var(--surface-card)', border: '1px solid var(--border-hairline)',
+        padding: '22px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1rem', color: 'var(--champagne-500)' }}>{index}</span>
+      <h3 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 400,
+        fontSize: '1.3125rem', lineHeight: 1.22, color: 'var(--ink-900)' }}>{name}</h3>
+      <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', lineHeight: 1.6, color: 'var(--ink-500)',
+        display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>{description}</p>
+      <span style={{ height: '1px', background: 'var(--border-hairline)', marginTop: 'auto' }}></span>
+      <PriceBlock duration={duration} price={price} bookable={bookable} />
+    </div>
+  );
 }
 
 export function ServiceList({ services }) {
   const router = useRouter();
   const m = useMobile();
+  const goTo = (slug) => router.push(`/agendar?servico=${slug}`);
+
+  const note = (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px',
+      marginTop: m ? '20px' : 0, paddingTop: m ? 0 : '22px', borderTop: m ? 'none' : '1px solid var(--border-hairline)' }}>
+      <span style={{ color: 'var(--champagne-500)', fontSize: '13px', lineHeight: 1.6 }}>✦</span>
+      <span style={{ fontFamily: 'var(--font-sans)', fontSize: m ? '9.5px' : '10.5px', fontWeight: 500, letterSpacing: '0.16em',
+        textTransform: 'uppercase', color: 'var(--ink-500)', lineHeight: 1.8 }}>Consulte disponibilidade para mais opções personalizadas.</span>
+    </div>
+  );
+
+  if (m) {
+    return (
+      <div>
+        <div className="bm-scroller" style={{ margin: '0 calc(var(--gutter) * -1)', padding: '2px var(--gutter) 6px' }}>
+          {services.map((s, i) => (
+            <ServiceCard key={s.slug} index={'0' + (i + 1)} name={s.name} description={s.description}
+              duration={s.duration} price={s.price} bookable={s.bookable} onSelect={() => goTo(s.slug)} />
+          ))}
+        </div>
+        {note}
+      </div>
+    );
+  }
+
   return (
     <div>
       {services.map((s, i) => (
         <ServiceLine key={s.slug} index={'0' + (i + 1)} name={s.name} description={s.description}
-          duration={s.duration} price={s.price} bookable={s.bookable} mobile={m} last={i === services.length - 1}
-          onSelect={() => router.push(`/agendar?servico=${s.slug}`)} />
+          duration={s.duration} price={s.price} bookable={s.bookable} last={i === services.length - 1}
+          onSelect={() => goTo(s.slug)} />
       ))}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', paddingTop: '22px',
-        borderTop: '1px solid var(--border-hairline)' }}>
-        <span style={{ color: 'var(--champagne-500)', fontSize: '13px', lineHeight: 1.6 }}>✦</span>
-        <span style={{ fontFamily: 'var(--font-sans)', fontSize: m ? '9.5px' : '10.5px', fontWeight: 500, letterSpacing: '0.16em',
-          textTransform: 'uppercase', color: 'var(--ink-500)', lineHeight: 1.8 }}>Consulte disponibilidade para mais opções personalizadas.</span>
-      </div>
+      {note}
     </div>
   );
 }

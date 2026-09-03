@@ -28,5 +28,5 @@ a:hover{color:var(--rose-600)}
 .header-offset{padding-top:72px}
 @media (min-width:861px){.header-offset{padding-top:92px}}
 
-.services-grid{grid-template-columns:1fr}
-@media (min-width:861px){.services-grid{grid-template-columns:.82fr 1.18fr}}
+.services-grid{grid-template-columns:minmax(0,1fr)}
+@media (min-width:861px){.services-grid{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr)}}

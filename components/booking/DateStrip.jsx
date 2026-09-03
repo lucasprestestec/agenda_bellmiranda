@@ -4,9 +4,9 @@ import React from 'react';
 
 export function DateStrip({ days=[], value, onChange, monthLabel, style }) {
   return (
-    <div style={Object.assign({ display:'flex', flexDirection:'column', gap:'14px' }, style)}>
+    <div style={Object.assign({ display:'flex', flexDirection:'column', gap:'14px', minWidth:0 }, style)}>
       {monthLabel && <span style={{ fontFamily:'var(--font-sans)', fontSize:'var(--text-eyebrow)', letterSpacing:'var(--tracking-eyebrow)', textTransform:'uppercase', color:'var(--text-muted)' }}>{monthLabel}</span>}
-      <div style={{ display:'flex', gap:'10px', overflowX:'auto', paddingBottom:'4px' }}>
+      <div style={{ display:'flex', gap:'10px', overflowX:'auto', paddingBottom:'4px', minWidth:0 }}>
         {days.map(d => {
           const on = value === d.value;
           return (
