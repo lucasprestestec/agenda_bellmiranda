@@ -128,6 +128,10 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
                 <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'column', alignItems: mobile ? 'stretch' : 'flex-end', gap: '10px' }}>
                   <span style={{ alignSelf: mobile ? 'flex-start' : 'flex-end', fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
                     padding: '4px 10px', borderRadius: 'var(--radius-pill)', background: color.bg, color: color.fg }}>{STATUS_LABEL[a.status]}</span>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
+                    <WhatsAppBadge label="Confirmação" sentAt={a.confirmationSentAt} />
+                    <WhatsAppBadge label="Lembrete" sentAt={a.reminderSentAt} skip={!a.wantsReminder} />
+                  </div>
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
                     <Button size="sm" variant="ghost" onClick={() => onEdit(a.id)} iconLeft={<Icon name="pencil" size={14} />}>Editar</Button>
                     {a.status !== 'COMPLETED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'COMPLETED')}>Concluir</Button>}
@@ -201,6 +205,30 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
         )}
       </section>
     </div>
+  );
+}
+
+// Reflects Appointment.confirmationSentAt/reminderSentAt (set by lib/whatsapp/send.js
+// after each WhatsApp send) — "skip" is for the reminder badge when the client
+// didn't opt into a reminder, which isn't a pending state worth flagging.
+function WhatsAppBadge({ label, sentAt, skip }) {
+  if (skip) {
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 500,
+        padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: 'var(--nude-300)', color: 'var(--text-muted)' }}>
+        <Icon name="x" size={10} /> Sem lembrete
+      </span>
+    );
+  }
+  const sentTime = sentAt ? new Date(sentAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : null;
+  return (
+    <span title={sentTime ? `${label} enviada às ${sentTime}` : `${label} ainda não enviada`} style={{
+      display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 500,
+      padding: '3px 8px', borderRadius: 'var(--radius-pill)',
+      background: sentTime ? 'var(--success-100)' : 'var(--warning-100)',
+      color: sentTime ? 'var(--success-500)' : 'var(--warning-500)' }}>
+      <Icon name={sentTime ? 'check' : 'clock'} size={10} /> {label}{sentTime ? ` · ${sentTime}` : ' pendente'}
+    </span>
   );
 }
 
