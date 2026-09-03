@@ -14,8 +14,6 @@ import { useMobile } from '../../lib/useMobile';
 import { SITE } from '../../lib/site-config';
 import { MONTH_LABELS, formatPriceCents } from '../../lib/studio';
 
-const PHOTO_CLASSES = ['ph-w1', 'ph-w2', 'ph-w3', 'ph-w4', 'ph-w5'];
-
 const BENEFITS = [
   ['heart-handshake', 'Cuidado que acolhe', 'Experiência personalizada do início ao fim.'],
   ['leaf', 'Produtos premium', 'Marcas de alta performance e segurança.'],
@@ -47,7 +45,6 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
   const initialBookable = services.find((s) => s.slug === initialServiceSlug) ? initialServiceSlug : services[0]?.slug;
   const [svcSlug, setSvcSlug] = useState(initialBookable);
   const service = useMemo(() => services.find((s) => s.slug === svcSlug) || services[0], [services, svcSlug]);
-  const serviceIndex = services.indexOf(service);
 
   const [days, setDays] = useState([]);
   const [day, setDay] = useState(null);
@@ -172,10 +169,6 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
   return (
     <section id="agendar" style={{ position: 'relative', background: 'var(--surface-page)', overflow: 'hidden',
       padding: mobile ? '26px var(--gutter) 44px' : 'clamp(110px,12vw,170px) 0 var(--section-y)' }}>
-      {!mobile && (
-        <div className="ph ph-booking" style={{ position: 'absolute', top: 0, right: 0, width: '38%',
-          height: 'clamp(220px,26vw,330px)', backgroundPosition: 'center 30%' }}></div>
-      )}
       <div style={{ position: 'relative', maxWidth: 'var(--container)', margin: '0 auto', padding: mobile ? 0 : '0 var(--gutter)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: mobile ? 'minmax(0,1fr)' : 'minmax(0,1.16fr) minmax(0,.84fr)',
           gap: mobile ? '28px' : 'clamp(28px,4vw,60px)', alignItems: 'start' }}>
@@ -275,13 +268,10 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
                 </button>
               </div>
 
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                <span className={'ph ' + PHOTO_CLASSES[serviceIndex % PHOTO_CLASSES.length]} style={{ width: '76px', height: '64px', flexShrink: 0 }}></span>
-                <span>
-                  <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontSize: '1.1875rem', color: 'var(--ink-900)' }}>{service.name}</span>
-                  <span style={{ display: 'block', marginTop: '5px', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem',
-                    lineHeight: 1.6, color: 'var(--ink-500)' }}>{service.description}</span>
-                </span>
+              <div>
+                <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontSize: '1.1875rem', color: 'var(--ink-900)' }}>{service.name}</span>
+                <span style={{ display: 'block', marginTop: '5px', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem',
+                  lineHeight: 1.6, color: 'var(--ink-500)' }}>{service.description}</span>
               </div>
 
               <span style={{ height: '1px', background: 'var(--border-hairline)' }}></span>
@@ -380,9 +370,6 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
                   letterSpacing: '0.2em', textTransform: 'uppercase' }}>
                 {submitting ? 'Confirmando…' : (details ? 'Confirmar agendamento' : 'Confirmar horário')}
               </button>
-              <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--ink-500)' }}>
-                Sinal de 20% no PIX confirma o horário. Remarcações até 24h antes.
-              </p>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '9px',
