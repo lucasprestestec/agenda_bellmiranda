@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { isAuthorizedCronRequest } from '../../../../lib/cron';
 import { toAppointmentServiceView } from '../../../../lib/services';
-import { confirmationTemplate, reminderTemplate, dailySummaryTemplate } from '../../../../lib/whatsapp/templates';
+import {
+  confirmationTemplate,
+  reminderTemplate,
+  teamConfirmationTemplate,
+  teamReminderTemplate,
+  dailySummaryTemplate,
+} from '../../../../lib/whatsapp/templates';
 import { dateToISO, APPOINTMENT_STATUS } from '../../../../lib/studio';
 import { addDays } from '../../../../lib/calendar';
 import { SITE } from '../../../../lib/site-config';
@@ -14,10 +20,22 @@ function toE164(phone) {
   return digits.startsWith('55') ? digits : `55${digits}`;
 }
 
+// Each item goes to the client, plus a copy to whoever performs that
+// service (Service.staffName/.staffPhone) if one is set — different text
+// for each: the client gets the "talk to us at ..." notice, staff gets the
+// client's phone number instead.
+function buildRecipients({ appointment, serviceView, clientMessage, teamMessage }) {
+  const recipients = [{ role: 'client', phone: toE164(appointment.clientPhone), text: clientMessage.text }];
+  if (serviceView.staffPhone) {
+    recipients.push({ role: 'team', label: serviceView.staffName || null, phone: toE164(serviceView.staffPhone), text: teamMessage.text });
+  }
+  return recipients;
+}
+
 // Polled by the external WhatsApp agent (Evolution API, running outside
 // Vercel — this site can't reach it directly). Returns what's ready to send;
-// the agent calls POST /api/agent/mark-sent once each message actually goes
-// out. Nothing here sends anything itself.
+// the agent calls POST /api/agent/mark-sent once every recipient for an item
+// has been sent successfully. Nothing here sends anything itself.
 export async function GET(request) {
   if (!isAuthorizedCronRequest(request)) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
@@ -49,27 +67,33 @@ export async function GET(request) {
 
   const confirmations = toConfirm.map((appointment) => {
     const serviceView = toAppointmentServiceView(appointment);
-    const message = confirmationTemplate({ appointment, serviceView });
     return {
       appointmentId: appointment.id,
-      phone: toE164(appointment.clientPhone),
       clientName: appointment.clientName,
       date: appointment.date,
       startTime: appointment.startTime,
-      text: message.text,
+      recipients: buildRecipients({
+        appointment,
+        serviceView,
+        clientMessage: confirmationTemplate({ appointment, serviceView }),
+        teamMessage: teamConfirmationTemplate({ appointment, serviceView }),
+      }),
     };
   });
 
   const reminders = toRemind.map((appointment) => {
     const serviceView = toAppointmentServiceView(appointment);
-    const message = reminderTemplate({ appointment, serviceView });
     return {
       appointmentId: appointment.id,
-      phone: toE164(appointment.clientPhone),
       clientName: appointment.clientName,
       date: appointment.date,
       startTime: appointment.startTime,
-      text: message.text,
+      recipients: buildRecipients({
+        appointment,
+        serviceView,
+        clientMessage: reminderTemplate({ appointment, serviceView }),
+        teamMessage: teamReminderTemplate({ appointment, serviceView }),
+      }),
     };
   });
 

@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import { SITE } from '../lib/site-config.js';
 
 const prisma = new PrismaClient();
+
+// All 13 services below are Bell's own — she gets a WhatsApp copy of every
+// confirmation/reminder for them, same as Jessica does for hers (added
+// separately through /admin/servicos, so they're untouched by this seed).
+const BELL_STAFF = { staffName: 'Bell', staffPhone: SITE.whatsappNumber };
 
 // Official catalog (2026-09-01, final revision) — exactly these 13 services.
 // Durations are kept from whatever the service already had (the field is
@@ -109,8 +115,8 @@ async function main() {
   for (const service of SERVICES) {
     await prisma.service.upsert({
       where: { slug: service.slug },
-      create: { ...service, active: true },
-      update: { ...service, active: true },
+      create: { ...service, ...BELL_STAFF, active: true },
+      update: { ...service, ...BELL_STAFF, active: true },
     });
   }
 

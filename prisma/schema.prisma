@@ -18,6 +18,11 @@ model Service {
   tags         String? // comma-separated, e.g. "Especialidade"
   order        Int           @default(0)
   active       Boolean       @default(true)
+  // Who performs this service — the external WhatsApp agent notifies this
+  // person (not just the client) on confirmation/reminder. Null = no staff
+  // copy is sent for this service.
+  staffName    String?
+  staffPhone   String?
   appointments Appointment[]
 }
 

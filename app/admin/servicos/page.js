@@ -11,7 +11,7 @@ import { Input } from '../../../components/forms/Input';
 import { Textarea } from '../../../components/forms/Textarea';
 import { useMobile } from '../../../lib/useMobile';
 
-const emptyDraft = { name: '', description: '', priceReais: '', durationMin: '', priceNote: '', tags: '', order: '0' };
+const emptyDraft = { name: '', description: '', priceReais: '', durationMin: '', priceNote: '', tags: '', order: '0', staffName: '', staffPhone: '' };
 
 function toDraft(service) {
   return {
@@ -22,6 +22,8 @@ function toDraft(service) {
     priceNote: service.priceNote || '',
     tags: (service.tags || []).join(', '),
     order: String(service.order ?? 0),
+    staffName: service.staffName || '',
+    staffPhone: service.staffPhone || '',
   };
 }
 
@@ -34,6 +36,8 @@ function toPayload(draft) {
     priceNote: draft.priceNote.trim() || null,
     tags: draft.tags.trim() || null,
     order: Number(draft.order) || 0,
+    staffName: draft.staffName.trim() || null,
+    staffPhone: draft.staffPhone.trim() || null,
   };
 }
 
@@ -228,6 +232,14 @@ function ServiceFields({ draft, onChange, idPrefix, mobile }) {
       <Field label="Tags" htmlFor={`${idPrefix}-tags`} hint="Separadas por vírgula, ex.: Especialidade">
         <Input id={`${idPrefix}-tags`} value={draft.tags} onChange={(e) => onChange({ tags: e.target.value })} />
       </Field>
+      <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
+        <Field label="Quem atende" htmlFor={`${idPrefix}-staff-name`} hint="Deixe vazio se não precisa notificar ninguém além do cliente">
+          <Input id={`${idPrefix}-staff-name`} value={draft.staffName} onChange={(e) => onChange({ staffName: e.target.value })} />
+        </Field>
+        <Field label="WhatsApp de quem atende" htmlFor={`${idPrefix}-staff-phone`} hint="Recebe cópia da confirmação e do lembrete">
+          <Input id={`${idPrefix}-staff-phone`} value={draft.staffPhone} onChange={(e) => onChange({ staffPhone: e.target.value })} />
+        </Field>
+      </div>
     </>
   );
 }

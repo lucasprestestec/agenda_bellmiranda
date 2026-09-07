@@ -31,6 +31,8 @@ export async function PATCH(request, { params }) {
   if (body.tags !== undefined) data.tags = body.tags ? String(body.tags).trim().slice(0, 200) : null;
   if (body.order !== undefined && Number.isFinite(body.order)) data.order = Math.round(body.order);
   if (typeof body.active === 'boolean') data.active = body.active;
+  if (body.staffName !== undefined) data.staffName = body.staffName ? String(body.staffName).trim().slice(0, 80) : null;
+  if (body.staffPhone !== undefined) data.staffPhone = body.staffPhone ? String(body.staffPhone).trim().slice(0, 40) : null;
 
   const service = await prisma.service.update({ where: { id }, data }).catch(() => null);
   if (!service) return NextResponse.json({ error: 'Serviço não encontrado.' }, { status: 404 });

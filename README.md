@@ -76,13 +76,21 @@ lets that agent report back what went out:
 
 | Endpoint | Auth | Purpose |
 | --- | --- | --- |
-| `GET /api/agent/pending-messages` | `Authorization: Bearer $CRON_SECRET` | Returns ready-to-send confirmations, reminders, and today's summary (client name, phone in E.164, and the exact message text — built from `lib/whatsapp/templates.js`) |
+| `GET /api/agent/pending-messages` | `Authorization: Bearer $CRON_SECRET` | Returns ready-to-send confirmations, reminders, and today's summary |
 | `POST /api/agent/mark-sent` | same | Body `{ appointmentId, type: "confirmation" \| "reminder" }` — marks `confirmationSentAt` / `reminderSentAt` so the appointment isn't handed out again on the next poll |
 
-The external agent is expected to poll `pending-messages` every 30–60s,
-send each item via Evolution, call `mark-sent` on success, and dedupe the
-daily summary by date on its own side (there's no `dailySummarySentAt`
-field here — the summary is just recomputed fresh on every poll).
+Each confirmation/reminder item carries a `recipients` array (phone in
+E.164 + exact text per recipient, from `lib/whatsapp/templates.js`) rather
+than a single phone/text — the client always gets one, and whoever performs
+that service (`Service.staffName` / `.staffPhone`, editable per service in
+`/admin/servicos`) gets a second copy with different wording if set. The
+external agent is expected to send to every recipient in the list before
+calling `mark-sent` for that item — if only some succeed, don't call it, so
+the whole item (all recipients) is retried on the next poll rather than
+tracked per-recipient. It should poll `pending-messages` every 30–60s, and
+dedupe the daily summary by date on its own side (there's no
+`dailySummarySentAt` field here — the summary is just recomputed fresh on
+every poll).
 
 `Appointment.confirmationSentAt` / `.reminderSentAt` are the only guard
 against duplicate sends — nothing in this app calls the agent or times

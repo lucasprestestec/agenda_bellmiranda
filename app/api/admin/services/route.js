@@ -43,11 +43,13 @@ export async function POST(request) {
   const priceNote = body.priceNote ? String(body.priceNote).trim().slice(0, 80) : null;
   const tags = body.tags ? String(body.tags).trim().slice(0, 200) : null;
   const order = Number.isFinite(body.order) ? Math.round(body.order) : 0;
+  const staffName = body.staffName ? String(body.staffName).trim().slice(0, 80) : null;
+  const staffPhone = body.staffPhone ? String(body.staffPhone).trim().slice(0, 40) : null;
 
   const slug = await uniqueSlug(slugify(body.slug || name));
 
   const service = await prisma.service.create({
-    data: { slug, name, description, priceCents, durationMin, priceNote, tags, order, active: true },
+    data: { slug, name, description, priceCents, durationMin, priceNote, tags, order, staffName, staffPhone, active: true },
   });
 
   return NextResponse.json({ service }, { status: 201 });
