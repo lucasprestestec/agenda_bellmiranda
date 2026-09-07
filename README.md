@@ -78,6 +78,7 @@ lets that agent report back what went out:
 | --- | --- | --- |
 | `GET /api/agent/pending-messages` | `Authorization: Bearer $CRON_SECRET` | Returns ready-to-send confirmations, reminders, and today's summary |
 | `POST /api/agent/mark-sent` | same | Body `{ appointmentId, type: "confirmation" \| "reminder" }` — marks `confirmationSentAt` / `reminderSentAt` so the appointment isn't handed out again on the next poll |
+| `GET /api/agent/agenda?range=day\|week\|month&date=YYYY-MM-DD&staffPhone=...` | same | On-demand agenda lookup for chat commands ("agendadia" etc.) — returns `{ text }` ready to relay verbatim. `staffPhone` scopes to one person's own services (omit for everyone); the agent must verify the WhatsApp sender is actually that staff member before calling this — this endpoint only checks the shared secret, not who's asking |
 
 Each confirmation/reminder item carries a `recipients` array (phone in
 E.164 + exact text per recipient, from `lib/whatsapp/templates.js`) rather
