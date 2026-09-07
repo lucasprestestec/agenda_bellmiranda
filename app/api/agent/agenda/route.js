@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { isAuthorizedCronRequest } from '../../../../lib/cron';
 import { toAppointmentServiceView } from '../../../../lib/services';
-import { dateToISO, APPOINTMENT_STATUS } from '../../../../lib/studio';
-import { addDays, startOfMonth, startOfWeek, formatLong, formatMonthYear, formatDayShort } from '../../../../lib/calendar';
+import { dateToISO, APPOINTMENT_STATUS, WEEKDAY_LABELS } from '../../../../lib/studio';
+import { addDays, startOfMonth, startOfWeek, parseISO, formatLong, formatMonthYear } from '../../../../lib/calendar';
 import { samePhone } from '../../../../lib/phone';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -23,6 +23,17 @@ function formatLine(appointment) {
   return `${appointment.startTime} — ${appointment.clientName} (${serviceView.name})`;
 }
 
+// "Seg 14/09" — compact enough to use as a repeated section header in a
+// week/month listing without it turning into a wall of text.
+function shortDayHeader(iso) {
+  const date = parseISO(iso);
+  const weekday = WEEKDAY_LABELS[date.getDay()];
+  const cap = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  return `${cap} ${dd}/${mm}`;
+}
+
 function buildDayText(dateISO, appointments) {
   const header = `Agenda de ${formatLong(dateISO)}:`;
   const body = appointments.length
@@ -31,23 +42,15 @@ function buildDayText(dateISO, appointments) {
   return `${header}\n${body}`;
 }
 
-function buildWeekText(startISO, appointmentsByDate) {
-  const days = Array.from({ length: 7 }, (_, i) => addDays(startISO, i));
-  const sections = days.map((d) => {
-    const dayAppointments = appointmentsByDate.get(d) || [];
-    const body = dayAppointments.length
-      ? dayAppointments.map(formatLine).join('\n')
-      : 'Sem agendamentos.';
-    return `${formatLong(d)}:\n${body}`;
-  });
-  return `Agenda da semana:\n\n${sections.join('\n\n')}`;
-}
-
-function buildMonthText(monthStartISO, appointmentsByDate) {
+// Both week and month use the same shape — one short header per day that
+// actually has something, followed by its lines. Empty days are skipped
+// entirely rather than padded with "sem agendamentos", so a light week/month
+// stays short instead of listing every blank day.
+function buildGroupedText(title, appointmentsByDate) {
   const days = [...appointmentsByDate.keys()].sort();
-  if (!days.length) return `Agenda de ${formatMonthYear(monthStartISO)}:\nNenhum horário marcado no mês.`;
-  const lines = days.map((d) => `${formatDayShort(d)} — ${appointmentsByDate.get(d).length} agendamento(s)`);
-  return `Agenda de ${formatMonthYear(monthStartISO)}:\n${lines.join('\n')}`;
+  if (!days.length) return `${title}:\nNenhum horário marcado.`;
+  const sections = days.map((d) => `${shortDayHeader(d)}\n${appointmentsByDate.get(d).map(formatLine).join('\n')}`);
+  return `${title}:\n\n${sections.join('\n\n')}`;
 }
 
 // Polled on demand by the external WhatsApp agent when Bell or Jessica text
@@ -109,7 +112,8 @@ export async function GET(request) {
       if (!byDate.has(a.date)) byDate.set(a.date, []);
       byDate.get(a.date).push(a);
     }
-    text = range === 'week' ? buildWeekText(rangeStart, byDate) : buildMonthText(rangeStart, byDate);
+    const title = range === 'week' ? 'Agenda da semana' : `Agenda de ${formatMonthYear(rangeStart)}`;
+    text = buildGroupedText(title, byDate);
   }
 
   // Structured form alongside `text` — the AI needs real appointmentIds to
