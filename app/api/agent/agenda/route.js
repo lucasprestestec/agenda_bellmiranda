@@ -111,5 +111,18 @@ export async function GET(request) {
     text = range === 'week' ? buildWeekText(rangeStart, byDate) : buildMonthText(rangeStart, byDate);
   }
 
-  return NextResponse.json({ range, date: anchor, rangeStart, rangeEnd, count: scoped.length, text });
+  // Structured form alongside `text` — the AI needs real appointmentIds to
+  // act on when a chat command is "cancela a Ana de segunda" rather than
+  // just a read.
+  const appointmentsOut = scoped.map((a) => ({
+    appointmentId: a.id,
+    clientName: a.clientName,
+    clientPhone: a.clientPhone || null,
+    date: a.date,
+    startTime: a.startTime,
+    endTime: a.endTime,
+    service: toAppointmentServiceView(a).name,
+  }));
+
+  return NextResponse.json({ range, date: anchor, rangeStart, rangeEnd, count: scoped.length, text, appointments: appointmentsOut });
 }

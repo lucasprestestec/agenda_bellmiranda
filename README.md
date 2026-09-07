@@ -78,20 +78,29 @@ lets that agent report back what went out:
 | --- | --- | --- |
 | `GET /api/agent/pending-messages` | `Authorization: Bearer $CRON_SECRET` | Returns ready-to-send confirmations, reminders, and today's summary |
 | `POST /api/agent/mark-sent` | same | Body `{ appointmentId, type: "confirmation" \| "reminder" }` — marks `confirmationSentAt` / `reminderSentAt` so the appointment isn't handed out again on the next poll |
-| `GET /api/agent/agenda?range=day\|week\|month&date=YYYY-MM-DD&staffPhone=...` | same | On-demand agenda lookup for chat commands ("agendadia" etc.) — returns `{ text }` ready to relay verbatim. `staffPhone` scopes to one person's own services (omit for everyone); the agent must verify the WhatsApp sender is actually that staff member before calling this — this endpoint only checks the shared secret, not who's asking |
+| `GET /api/agent/agenda?range=day\|week\|month&date=YYYY-MM-DD&staffPhone=...` | same | On-demand agenda lookup for chat commands ("agendadia" etc.) — returns `{ text, appointments }`: `text` ready to relay verbatim, `appointments` the same data structured (with `appointmentId`) for the AI to act on next |
+| `GET /api/agent/services?staffPhone=...` | same | Bookable services for that staff member — lets the AI resolve free text ("depilação axila") to a real `serviceId` before booking |
+| `POST /api/agent/appointments` | same | Creates an appointment. Body: `staffPhone, serviceId, date, startTime, clientName, clientPhone?, wantsReminder?`. `serviceId` must belong to `staffPhone` (403 otherwise). `clientPhone` may be omitted — that appointment just won't get an automatic confirmation/reminder text |
+| `PATCH /api/agent/appointments/:id` | same | Body `{ staffPhone, date?, startTime? }` to reschedule, or `{ staffPhone, status: "CANCELLED" }` to cancel — nothing else (no service reassignment). 403 if the appointment's service doesn't belong to `staffPhone` |
+
+For all of these, `staffPhone` scopes to one person's own services (omit
+where supported for everyone) — **this app only checks the shared secret,
+not who's asking**; verifying the WhatsApp sender is actually that staff
+member, and that any AI-parsed request got an explicit human confirmation
+before calling a write endpoint, is entirely the external agent's job.
 
 Each confirmation/reminder item carries a `recipients` array (phone in
 E.164 + exact text per recipient, from `lib/whatsapp/templates.js`) rather
-than a single phone/text — the client always gets one, and whoever performs
-that service (`Service.staffName` / `.staffPhone`, editable per service in
-`/admin/servicos`) gets a second copy with different wording if set. The
-external agent is expected to send to every recipient in the list before
-calling `mark-sent` for that item — if only some succeed, don't call it, so
-the whole item (all recipients) is retried on the next poll rather than
-tracked per-recipient. It should poll `pending-messages` every 30–60s, and
-dedupe the daily summary by date on its own side (there's no
-`dailySummarySentAt` field here — the summary is just recomputed fresh on
-every poll).
+than a single phone/text — the client gets one if `clientPhone` was given,
+and whoever performs that service (`Service.staffName` / `.staffPhone`,
+editable per service in `/admin/servicos`) gets a second copy with
+different wording if set. The external agent is expected to send to every
+recipient in the list before calling `mark-sent` for that item — if only
+some succeed, don't call it, so the whole item (all recipients) is retried
+on the next poll rather than tracked per-recipient. It should poll
+`pending-messages` every 30–60s, and dedupe the daily summary by date on
+its own side (there's no `dailySummarySentAt` field here — the summary is
+just recomputed fresh on every poll).
 
 `Appointment.confirmationSentAt` / `.reminderSentAt` are the only guard
 against duplicate sends — nothing in this app calls the agent or times

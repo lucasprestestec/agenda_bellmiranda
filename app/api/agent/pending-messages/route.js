@@ -23,9 +23,14 @@ function toE164(phone) {
 // Each item goes to the client, plus a copy to whoever performs that
 // service (Service.staffName/.staffPhone) if one is set — different text
 // for each: the client gets the "talk to us at ..." notice, staff gets the
-// client's phone number instead.
+// client's phone number instead. Chat-created appointments can skip the
+// client's phone (the human chose to book without it) — no client recipient
+// in that case, but staff still gets their copy.
 function buildRecipients({ appointment, serviceView, clientMessage, teamMessage }) {
-  const recipients = [{ role: 'client', phone: toE164(appointment.clientPhone), text: clientMessage.text }];
+  const recipients = [];
+  if (appointment.clientPhone) {
+    recipients.push({ role: 'client', phone: toE164(appointment.clientPhone), text: clientMessage.text });
+  }
   if (serviceView.staffPhone) {
     recipients.push({ role: 'team', label: serviceView.staffName || null, phone: toE164(serviceView.staffPhone), text: teamMessage.text });
   }
