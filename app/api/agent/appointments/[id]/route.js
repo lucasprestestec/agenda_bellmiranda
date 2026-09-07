@@ -4,6 +4,7 @@ import { isAuthorizedCronRequest } from '../../../../../lib/cron';
 import { isRangeFree } from '../../../../../lib/availability';
 import { toServiceView } from '../../../../../lib/services';
 import { toMinutes, toHHMM, APPOINTMENT_STATUS } from '../../../../../lib/studio';
+import { samePhone } from '../../../../../lib/phone';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -31,7 +32,7 @@ export async function PATCH(request, { params }) {
 
   const existing = await prisma.appointment.findUnique({ where: { id }, include: { service: true } });
   if (!existing) return NextResponse.json({ error: 'Agendamento não encontrado.' }, { status: 404 });
-  if (!existing.service || existing.service.staffPhone !== staffPhone) {
+  if (!existing.service || !samePhone(existing.service.staffPhone, staffPhone)) {
     return NextResponse.json({ error: 'Esse agendamento não pertence a esse profissional.' }, { status: 403 });
   }
 

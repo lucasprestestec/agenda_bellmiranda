@@ -12,13 +12,7 @@ import {
 import { dateToISO, APPOINTMENT_STATUS } from '../../../../lib/studio';
 import { addDays } from '../../../../lib/calendar';
 import { SITE } from '../../../../lib/site-config';
-
-// Local numbers are collected as DDD + number; WhatsApp needs full E.164
-// with country code. Assumes Brazilian clients (studio is Tatuí — SP).
-function toE164(phone) {
-  const digits = phone.replace(/\D/g, '');
-  return digits.startsWith('55') ? digits : `55${digits}`;
-}
+import { toE164 } from '../../../../lib/phone';
 
 // Each item goes to the client, plus a copy to whoever performs that
 // service (Service.staffName/.staffPhone) if one is set — different text

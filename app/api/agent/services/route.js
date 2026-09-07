@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { listActiveServices } from '../../../../lib/services';
 import { isAuthorizedCronRequest } from '../../../../lib/cron';
+import { samePhone } from '../../../../lib/phone';
 
 // Lets the external chat AI resolve a free-text service name ("depilação
 // axila") against the real catalog before creating/editing an appointment
@@ -15,7 +16,7 @@ export async function GET(request) {
   const staffPhone = searchParams.get('staffPhone') || null;
 
   const services = await listActiveServices();
-  const scoped = services.filter((s) => s.bookable && (!staffPhone || s.staffPhone === staffPhone));
+  const scoped = services.filter((s) => s.bookable && (!staffPhone || samePhone(s.staffPhone, staffPhone)));
 
   return NextResponse.json({
     services: scoped.map((s) => ({

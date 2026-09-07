@@ -4,6 +4,7 @@ import { isAuthorizedCronRequest } from '../../../../lib/cron';
 import { toAppointmentServiceView } from '../../../../lib/services';
 import { dateToISO, APPOINTMENT_STATUS } from '../../../../lib/studio';
 import { addDays, startOfMonth, startOfWeek, formatLong, formatMonthYear, formatDayShort } from '../../../../lib/calendar';
+import { samePhone } from '../../../../lib/phone';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const RANGES = new Set(['day', 'week', 'month']);
@@ -96,7 +97,7 @@ export async function GET(request) {
   });
 
   const scoped = staffPhone
-    ? appointments.filter((a) => a.service && a.service.staffPhone === staffPhone)
+    ? appointments.filter((a) => a.service && samePhone(a.service.staffPhone, staffPhone))
     : appointments;
 
   let text;

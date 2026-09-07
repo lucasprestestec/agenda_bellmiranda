@@ -4,6 +4,7 @@ import { isAuthorizedCronRequest } from '../../../../lib/cron';
 import { isSlotStillAvailable } from '../../../../lib/availability';
 import { toServiceView } from '../../../../lib/services';
 import { toMinutes, toHHMM, APPOINTMENT_STATUS } from '../../../../lib/studio';
+import { samePhone } from '../../../../lib/phone';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -44,7 +45,7 @@ export async function POST(request) {
 
   const service = await prisma.service.findUnique({ where: { id: serviceId } });
   if (!service || !service.active) return NextResponse.json({ error: 'Serviço não encontrado.' }, { status: 404 });
-  if (service.staffPhone !== staffPhone) {
+  if (!samePhone(service.staffPhone, staffPhone)) {
     return NextResponse.json({ error: 'Esse serviço não pertence a esse profissional.' }, { status: 403 });
   }
   if (service.durationMin == null || service.priceCents == null) {
