@@ -208,9 +208,10 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
   );
 }
 
-// Reflects Appointment.confirmationSentAt/reminderSentAt (set by lib/whatsapp/send.js
-// after each WhatsApp send) — "skip" is for the reminder badge when the client
-// didn't opt into a reminder, which isn't a pending state worth flagging.
+// Reflects Appointment.confirmationSentAt/reminderSentAt (set by the external
+// WhatsApp agent via POST /api/agent/mark-sent after each send) — "skip" is
+// for the reminder badge when the client didn't opt into a reminder, which
+// isn't a pending state worth flagging.
 function WhatsAppBadge({ label, sentAt, skip }) {
   if (skip) {
     return (
