@@ -33,7 +33,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Serviço ainda não está disponível para agendamento online.' }, { status: 409 });
   }
 
-  const available = await isSlotStillAvailable({ dateISO: date, startTime, durationMin: service.durationMin });
+  const available = await isSlotStillAvailable({ dateISO: date, startTime, durationMin: service.durationMin, staffPhone: service.staffPhone });
   if (!available) {
     return NextResponse.json({ error: 'Esse horário acabou de ficar indisponível. Escolha outro.' }, { status: 409 });
   }
@@ -41,7 +41,7 @@ export async function POST(request) {
   const endTime = toHHMM(toMinutes(startTime) + service.durationMin);
 
   const appointment = await prisma.$transaction(async (tx) => {
-    const stillFree = await isSlotStillAvailable({ dateISO: date, startTime, durationMin: service.durationMin });
+    const stillFree = await isSlotStillAvailable({ dateISO: date, startTime, durationMin: service.durationMin, staffPhone: service.staffPhone });
     if (!stillFree) return null;
     return tx.appointment.create({
       data: {

@@ -27,6 +27,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Data ou horário inválidos.' }, { status: 400 });
   }
   let durationMin;
+  let staffPhone = null;
   let data = {
     clientName, clientPhone, note,
     wantsReminder: false,
@@ -42,6 +43,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Esse serviço não tem duração definida — informe uma duração.' }, { status: 400 });
     }
     data.serviceId = service.id;
+    staffPhone = service.staffPhone;
   } else {
     const name = String(body.customServiceName || '').trim();
     const price = Number(body.customPriceCents);
@@ -55,7 +57,7 @@ export async function POST(request) {
   }
 
   if (!body.force) {
-    const free = await isRangeFree({ dateISO: date, startTime, durationMin });
+    const free = await isRangeFree({ dateISO: date, startTime, durationMin, staffPhone });
     if (!free) {
       return NextResponse.json({ error: 'Esse horário conflita com outro agendamento ou bloqueio.', conflict: true }, { status: 409 });
     }

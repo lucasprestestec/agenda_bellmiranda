@@ -14,6 +14,6 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Serviço ainda não está disponível para agendamento online.' }, { status: 409 });
   }
 
-  const slots = await listSlotsForDay({ dateISO: date, durationMin: service.durationMin });
+  const slots = await listSlotsForDay({ dateISO: date, durationMin: service.durationMin, staffPhone: service.staffPhone });
   return NextResponse.json({ slots });
 }

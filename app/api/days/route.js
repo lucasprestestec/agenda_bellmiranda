@@ -13,6 +13,6 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Serviço ainda não está disponível para agendamento online.' }, { status: 409 });
   }
 
-  const days = await listAvailableDays({ durationMin: service.durationMin, from, count: 14 });
+  const days = await listAvailableDays({ durationMin: service.durationMin, from, count: 14, staffPhone: service.staffPhone });
   return NextResponse.json({ days });
 }

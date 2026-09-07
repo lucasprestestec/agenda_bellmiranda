@@ -37,6 +37,7 @@ export async function PATCH(request, { params }) {
 
   // Reassign to a different catalog service, or to an ad-hoc one-off.
   let durationMin = existing.serviceId ? existing.service.durationMin : existing.customDurationMin;
+  let staffPhone = existing.serviceId ? existing.service.staffPhone : null;
   if (body.serviceId !== undefined) {
     if (body.serviceId === null) {
       const name = String(body.customServiceName || '').trim();
@@ -50,6 +51,7 @@ export async function PATCH(request, { params }) {
       data.customPriceCents = Math.round(price);
       data.customDurationMin = Math.round(duration);
       durationMin = data.customDurationMin;
+      staffPhone = null;
     } else {
       const service = await prisma.service.findUnique({ where: { id: body.serviceId } });
       if (!service) return NextResponse.json({ error: 'Serviço não encontrado.' }, { status: 400 });
@@ -57,6 +59,7 @@ export async function PATCH(request, { params }) {
       data.customServiceName = null;
       data.customPriceCents = null;
       data.customDurationMin = null;
+      staffPhone = service.staffPhone;
       if (service.durationMin != null) {
         durationMin = service.durationMin;
       } else {
@@ -98,7 +101,7 @@ export async function PATCH(request, { params }) {
   if (reschedule) {
     if (!durationMin) return NextResponse.json({ error: 'Duração do serviço não definida.' }, { status: 400 });
     if (!body.force) {
-      const free = await isRangeFree({ dateISO: date, startTime, durationMin, excludeAppointmentId: id });
+      const free = await isRangeFree({ dateISO: date, startTime, durationMin, excludeAppointmentId: id, staffPhone });
       if (!free) return NextResponse.json({ error: 'Esse horário conflita com outro agendamento ou bloqueio.', conflict: true }, { status: 409 });
     }
     data.date = date;

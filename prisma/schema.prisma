@@ -62,6 +62,10 @@ model BlockedSlot {
   endTime   String // HH:mm
   reason    String?
   createdAt DateTime @default(now())
+  // Null = blocks the whole studio (day off, holiday). Set = blocks only
+  // that one staff member's schedule. No admin UI sets this yet — every
+  // existing/new block stays studio-wide until one is added.
+  staffPhone String?
 
   @@index([date])
 }
