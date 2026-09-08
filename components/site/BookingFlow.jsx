@@ -12,7 +12,7 @@ import { Button } from '../core/Button';
 import { Ornament } from '../core/Ornament';
 import { useMobile } from '../../lib/useMobile';
 import { SITE } from '../../lib/site-config';
-import { MONTH_LABELS, formatPriceCents } from '../../lib/studio';
+import { MONTH_LABELS } from '../../lib/studio';
 
 const BENEFITS = [
   ['heart-handshake', 'Cuidado que acolhe', 'Experiência personalizada do início ao fim.'],
@@ -151,7 +151,6 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
               { label: 'Serviço', value: service.name },
               { label: 'Data', value: dayShort },
               { label: 'Horário', value: confirmation?.startTime || time },
-              { label: 'Sinal', value: formatPriceCents(confirmation?.depositCents ?? Math.round(service.priceCents * 0.2)) },
             ]}
             actions={
               <>
