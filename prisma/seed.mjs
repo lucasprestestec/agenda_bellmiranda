@@ -115,8 +115,12 @@ async function main() {
   for (const service of SERVICES) {
     await prisma.service.upsert({
       where: { slug: service.slug },
+      // staffName/staffPhone only get the Bell default on first insert — like
+      // durationMin, once a service exists it's admin-owned (e.g. Bell can
+      // reassign one of these 13 to another staff member via /admin/servicos),
+      // and this seed reruns on every deploy so it must never clobber that.
       create: { ...service, ...BELL_STAFF, active: true },
-      update: { ...service, ...BELL_STAFF, active: true },
+      update: { ...service, active: true },
     });
   }
 
