@@ -65,4 +65,15 @@
 
   --whatsapp-ink:var(--cocoa-800);
   --whatsapp-soft:#E3E8DC;
+
+  /* Per-staff accent palette — cycled by lib/staff.js in staff order, so it
+     scales past today's 3 people without touching this file again. */
+  --staff-1:var(--champagne-600);
+  --staff-1-soft:#F1E5D5;
+  --staff-2:#6E7B8A;
+  --staff-2-soft:#E7EBEF;
+  --staff-3:#8A6078;
+  --staff-3-soft:#F1E3EA;
+  --staff-4:var(--success-500);
+  --staff-4-soft:var(--success-100);
 }

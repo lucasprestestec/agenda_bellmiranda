@@ -18,7 +18,25 @@ const STATUS_COLOR = {
 const FULL_DAY_START = '00:00';
 const FULL_DAY_END = '23:59';
 
-export function DayView({ date, refreshToken, onEdit, mobile }) {
+// Splits the day into three legible chunks instead of one long scroll — a
+// stylist glancing at her phone between clients can jump straight to "o que
+// falta hoje" instead of scanning past everything already done.
+const PERIODS = [
+  { key: 'manha', label: 'Manhã', before: '12:00' },
+  { key: 'tarde', label: 'Tarde', before: '17:00' },
+  { key: 'fim', label: 'Fim de tarde', before: '23:59' },
+];
+
+function periodFor(startTime) {
+  return PERIODS.find((p) => startTime < p.before) || PERIODS[PERIODS.length - 1];
+}
+
+function staffFor(service, staffList) {
+  if (!service?.staffPhone) return null;
+  return staffList.find((s) => s.staffPhone === service.staffPhone) || null;
+}
+
+export function DayView({ date, refreshToken, onEdit, mobile, staffPhone, staff = [], today }) {
   const [appointments, setAppointments] = useState([]);
   const [blockedSlots, setBlockedSlots] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,22 +48,24 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
   const [dayBlockReason, setDayBlockReason] = useState('');
   const [dayBlockError, setDayBlockError] = useState(null);
 
+  const dayUrl = `/api/admin/day?date=${date}${staffPhone ? `&staffPhone=${encodeURIComponent(staffPhone)}` : ''}`;
+
   const load = useCallback(() => {
     setLoading(true);
-    fetch(`/api/admin/day?date=${date}`)
+    fetch(dayUrl)
       .then((r) => r.json())
       .then((data) => {
         setAppointments(data.appointments || []);
         setBlockedSlots(data.blockedSlots || []);
       })
       .finally(() => setLoading(false));
-  }, [date]);
+  }, [dayUrl]);
 
   useEffect(() => {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- immediate loading flag on date/refresh change
     setLoading(true);
-    fetch(`/api/admin/day?date=${date}`)
+    fetch(dayUrl)
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
@@ -54,7 +74,16 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [date, refreshToken]);
+  }, [dayUrl, refreshToken]);
+
+  const nowHHMM = date === today
+    ? `${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`
+    : null;
+  const nextAppointment = nowHHMM ? appointments.find((a) => a.status !== 'CANCELLED' && a.startTime >= nowHHMM) : null;
+
+  const periodGroups = PERIODS
+    .map((p) => ({ ...p, items: appointments.filter((a) => periodFor(a.startTime).key === p.key) }))
+    .filter((p) => p.items.length > 0);
 
   async function setStatus(id, status) {
     await fetch(`/api/admin/appointments/${id}`, {
@@ -109,40 +138,67 @@ export function DayView({ date, refreshToken, onEdit, mobile }) {
           <p style={{ color: 'var(--text-muted)' }}>Carregando…</p>
         ) : appointments.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>Nenhum agendamento neste dia.</p>
-        ) : appointments.map((a) => {
-          const color = STATUS_COLOR[a.status];
-          return (
-            <Surface key={a.id} padding={mobile ? 16 : 20} elevation="xs">
-              <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', gap: mobile ? '14px' : '20px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.375rem', color: 'var(--cocoa-800)' }}>
-                    {a.startTime} – {a.endTime}
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 'var(--text-body)' }}>{a.clientName || 'Sem nome'}{a.clientPhone ? ` · ${a.clientPhone}` : ''}</span>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>
-                    {a.service.name}{a.service.adhoc ? ' (avulso)' : ''}
-                    {' · ' + [a.service.duration, a.service.price || 'preço a definir'].filter(Boolean).join(' · ')}
-                  </span>
-                  {a.note && <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>Obs: {a.note}</span>}
-                </div>
-                <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'column', alignItems: mobile ? 'stretch' : 'flex-end', gap: '10px' }}>
-                  <span style={{ alignSelf: mobile ? 'flex-start' : 'flex-end', fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
-                    padding: '4px 10px', borderRadius: 'var(--radius-pill)', background: color.bg, color: color.fg }}>{STATUS_LABEL[a.status]}</span>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
-                    <WhatsAppBadge label="Confirmação" sentAt={a.confirmationSentAt} />
-                    <WhatsAppBadge label="Lembrete" sentAt={a.reminderSentAt} skip={!a.wantsReminder} />
+        ) : periodGroups.map((group) => (
+          <div key={group.key} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em',
+              textTransform: 'uppercase', color: 'var(--text-muted)', paddingBottom: '6px', borderBottom: '1px solid var(--border-hairline)' }}>
+              {group.label}
+            </span>
+            {group.items.map((a) => {
+              const color = STATUS_COLOR[a.status];
+              const isPast = nowHHMM != null && a.startTime < nowHHMM;
+              const isNext = nextAppointment?.id === a.id;
+              const person = staffFor(a.service, staff);
+              return (
+                <Surface key={a.id} padding={mobile ? 16 : 20} elevation="xs" style={{
+                  borderLeft: '3px solid ' + (person ? person.accent : 'var(--border-strong)'),
+                  opacity: isPast ? 0.55 : 1,
+                  background: isNext ? 'var(--surface-alt)' : undefined,
+                }}>
+                  <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', gap: mobile ? '14px' : '20px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.375rem', color: 'var(--cocoa-800)' }}>
+                          {a.startTime} – {a.endTime}
+                        </span>
+                        {isNext && (
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.08em',
+                            textTransform: 'uppercase', color: 'var(--rose-600)' }}>Próximo</span>
+                        )}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 'var(--text-body)' }}>{a.clientName || 'Sem nome'}{a.clientPhone ? ` · ${a.clientPhone}` : ''}</span>
+                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>
+                        {a.service.name}{a.service.adhoc ? ' (avulso)' : ''}
+                        {' · ' + [a.service.duration, a.service.price || 'preço a definir'].filter(Boolean).join(' · ')}
+                      </span>
+                      {a.note && <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>Obs: {a.note}</span>}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: mobile ? 'stretch' : 'flex-end', gap: '10px' }}>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignSelf: mobile ? 'flex-start' : 'flex-end', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
+                        {!staffPhone && person && (
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700,
+                            padding: '4px 9px', borderRadius: 'var(--radius-pill)', background: person.soft, color: person.accent }}>{person.staffName}</span>
+                        )}
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
+                          padding: '4px 10px', borderRadius: 'var(--radius-pill)', background: color.bg, color: color.fg }}>{STATUS_LABEL[a.status]}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
+                        <WhatsAppBadge label="Confirmação" sentAt={a.confirmationSentAt} />
+                        <WhatsAppBadge label="Lembrete" sentAt={a.reminderSentAt} skip={!a.wantsReminder} />
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
+                        <Button size="sm" variant="ghost" onClick={() => onEdit(a.id)} iconLeft={<Icon name="pencil" size={14} />}>Editar</Button>
+                        {a.status !== 'COMPLETED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'COMPLETED')}>Concluir</Button>}
+                        {a.status !== 'CANCELLED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CANCELLED')}>Cancelar</Button>}
+                        {a.status !== 'CONFIRMED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CONFIRMED')}>Reabrir</Button>}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
-                    <Button size="sm" variant="ghost" onClick={() => onEdit(a.id)} iconLeft={<Icon name="pencil" size={14} />}>Editar</Button>
-                    {a.status !== 'COMPLETED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'COMPLETED')}>Concluir</Button>}
-                    {a.status !== 'CANCELLED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CANCELLED')}>Cancelar</Button>}
-                    {a.status !== 'CONFIRMED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CONFIRMED')}>Reabrir</Button>}
-                  </div>
-                </div>
-              </div>
-            </Surface>
-          );
-        })}
+                </Surface>
+              );
+            })}
+          </div>
+        ))}
       </section>
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { toAppointmentServiceView } from '../../../../lib/services';
+import { samePhone } from '../../../../lib/phone';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const date = searchParams.get('date');
+  const staffPhone = searchParams.get('staffPhone') || null;
   if (!DATE_RE.test(date || '')) return NextResponse.json({ error: 'Data inválida.' }, { status: 400 });
 
-  const [appointments, blockedSlots] = await Promise.all([
+  const [allAppointments, blockedSlots] = await Promise.all([
     prisma.appointment.findMany({
       where: { date },
       include: { service: true },
@@ -17,6 +19,10 @@ export async function GET(request) {
     }),
     prisma.blockedSlot.findMany({ where: { date }, orderBy: { startTime: 'asc' } }),
   ]);
+
+  const appointments = staffPhone
+    ? allAppointments.filter((a) => samePhone(a.service?.staffPhone, staffPhone))
+    : allAppointments;
 
   return NextResponse.json({
     appointments: appointments.map((a) => ({

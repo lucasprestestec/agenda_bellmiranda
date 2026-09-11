@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AdminHeader } from '../../components/admin/AdminHeader';
 import { MonthView } from '../../components/admin/MonthView';
 import { WeekView } from '../../components/admin/WeekView';
 import { DayView } from '../../components/admin/DayView';
 import { AppointmentForm } from '../../components/admin/AppointmentForm';
+import { StaffSwitcher } from '../../components/admin/StaffSwitcher';
 import { Button } from '../../components/core/Button';
 import { IconButton } from '../../components/core/IconButton';
 import { Icon } from '../../components/core/Icon';
@@ -28,6 +29,12 @@ export default function AdminAgendaPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [formAppointmentId, setFormAppointmentId] = useState(null);
   const [formDefaults, setFormDefaults] = useState(null);
+  const [staff, setStaff] = useState([]);
+  const [staffFilter, setStaffFilter] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/admin/staff').then((r) => r.json()).then((data) => setStaff(data.staff || []));
+  }, []);
 
   function openCreate(date) {
     setFormAppointmentId(null);
@@ -100,6 +107,10 @@ export default function AdminAgendaPage() {
           </div>
         </div>
 
+        {staff.length > 0 && (
+          <StaffSwitcher staff={staff} value={staffFilter} onChange={setStaffFilter} mobile={m} />
+        )}
+
         {/* Row 2: date navigation — free to grow/shrink with the label's length
             without touching row 1's position. */}
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: m ? 'center' : 'flex-start',
@@ -119,16 +130,19 @@ export default function AdminAgendaPage() {
 
         {view === 'month' && (
           <MonthView monthDate={startOfMonth(focusDate)} refreshToken={refreshToken} today={today} mobile={m}
+            staffPhone={staffFilter}
             onSelectDay={(d) => { setFocusDate(d); setView('day'); }} />
         )}
         {view === 'week' && (
           <WeekView weekStart={startOfWeek(focusDate)} refreshToken={refreshToken} today={today} mobile={m}
+            staffPhone={staffFilter} staff={staff}
             onSelectDay={(d) => { setFocusDate(d); setView('day'); }}
             onEditAppointment={openEdit}
             onCreateAt={openCreate} />
         )}
         {view === 'day' && (
-          <DayView date={focusDate} refreshToken={refreshToken} mobile={m} onEdit={openEdit} />
+          <DayView date={focusDate} refreshToken={refreshToken} mobile={m} onEdit={openEdit}
+            staffPhone={staffFilter} staff={staff} today={today} />
         )}
       </main>
 

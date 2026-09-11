@@ -6,7 +6,7 @@ import { buildMonthGrid } from '../../lib/calendar';
 
 const STATUS_DOT = { CONFIRMED: 'var(--rose-500)', COMPLETED: 'var(--success-500)', CANCELLED: 'var(--text-muted)' };
 
-export function MonthView({ monthDate, refreshToken, today, onSelectDay, mobile }) {
+export function MonthView({ monthDate, refreshToken, today, onSelectDay, mobile, staffPhone }) {
   const [byDate, setByDate] = useState({});
   const grid = buildMonthGrid(monthDate);
   const from = grid[0].date;
@@ -14,11 +14,12 @@ export function MonthView({ monthDate, refreshToken, today, onSelectDay, mobile 
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/admin/range?from=${from}&to=${to}`)
+    const url = `/api/admin/range?from=${from}&to=${to}` + (staffPhone ? `&staffPhone=${encodeURIComponent(staffPhone)}` : '');
+    fetch(url)
       .then((r) => r.json())
       .then((data) => { if (!cancelled) setByDate(data.days || {}); });
     return () => { cancelled = true; };
-  }, [from, to, refreshToken]);
+  }, [from, to, refreshToken, staffPhone]);
 
   return (
     <div>

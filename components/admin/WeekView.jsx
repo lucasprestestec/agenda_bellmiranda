@@ -12,7 +12,12 @@ const STATUS_COLOR = {
   CANCELLED: { bg: 'var(--nude-300)', fg: 'var(--text-muted)' },
 };
 
-export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAppointment, onCreateAt, mobile }) {
+function staffFor(service, staffList) {
+  if (!service?.staffPhone) return null;
+  return staffList.find((s) => s.staffPhone === service.staffPhone) || null;
+}
+
+export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAppointment, onCreateAt, mobile, staffPhone, staff = [] }) {
   const [byDate, setByDate] = useState({});
   const [loading, setLoading] = useState(true);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -22,12 +27,13 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
     // eslint-disable-next-line react-hooks/set-state-in-effect -- immediate loading flag on range/refresh change
     setLoading(true);
     const to = addDays(weekStart, 6);
-    fetch(`/api/admin/range?from=${weekStart}&to=${to}`)
+    const url = `/api/admin/range?from=${weekStart}&to=${to}` + (staffPhone ? `&staffPhone=${encodeURIComponent(staffPhone)}` : '');
+    fetch(url)
       .then((r) => r.json())
       .then((data) => { if (!cancelled) setByDate(data.days || {}); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [weekStart, refreshToken]);
+  }, [weekStart, refreshToken, staffPhone]);
 
   // Mobile: a phone can't usefully show 7 side-by-side columns, so each day
   // gets its own full-width block, stacked — a day-by-day list rather than a grid.
@@ -57,8 +63,10 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {appts.map((a) => {
                     const color = STATUS_COLOR[a.status];
+                    const person = !staffPhone ? staffFor(a.service, staff) : null;
                     return (
                       <button key={a.id} onClick={() => onEditAppointment(a.id)} style={{ border: 0, textAlign: 'left', cursor: 'pointer',
+                        borderLeft: person ? `3px solid ${person.accent}` : 'none',
                         borderRadius: 'var(--radius-xs)', padding: '10px 12px', background: color.bg, color: color.fg,
                         fontFamily: 'var(--font-sans)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                         <span style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
@@ -84,7 +92,7 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(140px, 1fr))', gap: '10px', overflowX: 'auto' }}>
+    <div className="bm-scroller" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(140px, 1fr))', gap: '10px', overflowX: 'auto' }}>
       {days.map((iso) => {
         const isToday = iso === today;
         const weekday = parseISO(iso).getDay();
@@ -106,8 +114,10 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>
               ) : appts.map((a) => {
                 const color = STATUS_COLOR[a.status];
+                const person = !staffPhone ? staffFor(a.service, staff) : null;
                 return (
                   <button key={a.id} onClick={() => onEditAppointment(a.id)} style={{ border: 0, textAlign: 'left', cursor: 'pointer',
+                    borderLeft: person ? `3px solid ${person.accent}` : 'none',
                     borderRadius: 'var(--radius-xs)', padding: '6px 8px', background: color.bg, color: color.fg, fontFamily: 'var(--font-sans)' }}>
                     <div style={{ fontSize: '11px', fontWeight: 600 }}>{a.startTime}</div>
                     <div style={{ fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.clientName || 'Sem nome'}</div>
