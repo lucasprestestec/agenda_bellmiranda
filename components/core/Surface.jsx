@@ -14,7 +14,7 @@ export function Surface({ tone='card', padding=28, radius='var(--radius-lg)', bo
         boxShadow: shadows[elevation],
         color: tone==='inverse' ? 'var(--text-on-inverse)' : 'inherit',
         transition:'transform var(--dur-base) var(--ease-soft), box-shadow var(--dur-base) var(--ease-soft), border-color var(--dur-base) var(--ease-soft)'
-      }, interactive && hover ? { transform:'translateY(var(--lift-hover))', boxShadow:'var(--shadow-md)', borderColor:'var(--border-strong)' } : null, style)} {...rest}>
+      }, interactive && hover ? { transform:'translateY(var(--lift-hover))', boxShadow:'var(--shadow-md)', border:'1px solid var(--border-strong)' } : null, style)} {...rest}>
       {children}
     </div>
   );

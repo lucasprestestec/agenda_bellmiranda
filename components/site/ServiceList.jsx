@@ -69,7 +69,10 @@ function ServiceCard({ index, name, description, duration, price, bookable, onSe
 export function ServiceList({ services }) {
   const router = useRouter();
   const m = useMobile();
-  const goTo = (slug) => router.push(`/agendar?servico=${slug}`);
+  // Straight into booking that exact service — not a detour through /agendar
+  // (which doesn't read a servico param anyway), so picking a service here
+  // is one click, not two.
+  const goTo = (slug) => router.push(`/reservar?servico=${slug}`);
 
   const note = (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px',
