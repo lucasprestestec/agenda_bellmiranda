@@ -1,8 +1,8 @@
 import {
   Camera, MessageCircle, MapPin, ArrowLeft, ArrowRight, ArrowUpRight,
-  CalendarDays, Calendar, Clock, User, UserRound, Sparkles, Check, X, Plus,
+  CalendarDays, Calendar, Clock, User, UserRound, Users, Sparkles, Check, X, Plus,
   Trash2, LogOut, ChevronLeft, ChevronRight, Ban, Menu, ShieldCheck, Gem,
-  HeartHandshake, Leaf, Heart, Crown, Pencil, Lock,
+  HeartHandshake, Leaf, Heart, Crown, Pencil, Lock, Home, Search, Wallet, MoreHorizontal,
 } from 'lucide-react';
 
 // Lucide is the flagged substitution for the brand's (nonexistent) icon set —
@@ -40,6 +40,11 @@ const ICONS = {
   crown: Crown,
   pencil: Pencil,
   lock: Lock,
+  home: Home,
+  search: Search,
+  wallet: Wallet,
+  'more-horizontal': MoreHorizontal,
+  users: Users,
 };
 
 export function Icon({ name, size = 18, stroke = 1.25, color = 'currentColor', style }) {

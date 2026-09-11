@@ -19,6 +19,8 @@ a:hover{color:var(--rose-600)}
 .bm-scroller{display:flex;gap:12px;width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .bm-scroller::-webkit-scrollbar{display:none}
 .bm-scroller>*{scroll-snap-align:start;flex:0 0 auto}
+.bm-skeleton{background:var(--nude-300);animation:bm-pulse 1.2s ease-in-out infinite}
+@keyframes bm-pulse{0%,100%{opacity:.5}50%{opacity:1}}
 @media (max-width:860px){
   h1,h2,h3{text-wrap:pretty}
   section{min-width:0}

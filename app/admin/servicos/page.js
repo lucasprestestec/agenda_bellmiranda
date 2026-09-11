@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AdminHeader } from '../../../components/admin/AdminHeader';
+import { AdminAppShell } from '../../../components/admin/AdminAppShell';
 import { Button } from '../../../components/core/Button';
 import { IconButton } from '../../../components/core/IconButton';
 import { Icon } from '../../../components/core/Icon';
@@ -133,10 +133,8 @@ export default function AdminServicesPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--surface-page)' }}>
-      <AdminHeader />
-
-      <main style={{ maxWidth: '880px', margin: '0 auto', padding: m ? '24px var(--gutter) 60px' : '40px var(--gutter) 80px',
+    <AdminAppShell>
+      <main style={{ maxWidth: '880px', margin: '0 auto', padding: m ? '24px var(--gutter) 24px' : '40px var(--gutter) 80px',
         display: 'flex', flexDirection: 'column', gap: m ? '22px' : '32px' }}>
         <div style={{ display: 'flex', flexDirection: m ? 'column' : 'row', alignItems: m ? 'stretch' : 'center',
           justifyContent: 'space-between', gap: '16px' }}>
@@ -199,7 +197,7 @@ export default function AdminServicesPage() {
           </div>
         )}
       </main>
-    </div>
+    </AdminAppShell>
   );
 }
 

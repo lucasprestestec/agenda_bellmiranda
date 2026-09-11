@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AdminHeader } from '../../../components/admin/AdminHeader';
+import { AdminAppShell } from '../../../components/admin/AdminAppShell';
 import { useMobile } from '../../../lib/useMobile';
 import { formatPriceCents, WEEKDAY_LABELS } from '../../../lib/studio';
 import { formatWeekRange, parseISO } from '../../../lib/calendar';
@@ -19,9 +19,8 @@ export default function FinanceiroPage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--surface-page)' }}>
-      <AdminHeader />
-      <main style={{ maxWidth: '1080px', margin: '0 auto', padding: m ? '24px var(--gutter) 60px' : '40px var(--gutter) 80px',
+    <AdminAppShell>
+      <main style={{ maxWidth: '1080px', margin: '0 auto', padding: m ? '24px var(--gutter) 24px' : '40px var(--gutter) 80px',
         display: 'flex', flexDirection: 'column', gap: m ? '20px' : '28px' }}>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -54,7 +53,7 @@ export default function FinanceiroPage() {
           </>
         )}
       </main>
-    </div>
+    </AdminAppShell>
   );
 }
 
