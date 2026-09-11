@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { isRangeFree } from '../../../../lib/availability';
+import { isRangeFree, hasActiveAppointmentOverlap, ACTIVE_APPOINTMENT_CONFLICT_MESSAGE } from '../../../../lib/availability';
 import { toHHMM, toMinutes, APPOINTMENT_STATUS } from '../../../../lib/studio';
 import { toAppointmentServiceView } from '../../../../lib/services';
 import { isOverlapConstraintError } from '../../../../lib/db-errors';
@@ -60,30 +60,38 @@ export async function POST(request) {
     data.customDurationMin = Math.round(durationMin);
   }
 
+  // Hard rule, never bypassable by force:true — a professional can't have
+  // two active appointments overlapping. Checked unconditionally, before
+  // force is even consulted.
+  const activeConflict = await hasActiveAppointmentOverlap({ dateISO: date, startTime, durationMin, staffPhone });
+  if (activeConflict) {
+    return NextResponse.json({ error: ACTIVE_APPOINTMENT_CONFLICT_MESSAGE, conflict: true, conflictType: 'appointment' }, { status: 409 });
+  }
+
+  // Softer check: a BlockedSlot (the admin's own schedule note — lunch,
+  // vacation, day off). Unlike an overlapping active appointment, this is a
+  // deliberate, self-imposed restriction the admin can consciously choose
+  // to override via force:true (e.g. opening an exception for one client).
   if (!body.force) {
     const free = await isRangeFree({ dateISO: date, startTime, durationMin, staffPhone });
     if (!free) {
-      return NextResponse.json({ error: 'Esse horário conflita com outro agendamento ou bloqueio.', conflict: true }, { status: 409 });
+      return NextResponse.json({ error: 'Esse horário conflita com um bloqueio de agenda.', conflict: true, conflictType: 'block' }, { status: 409 });
     }
   }
 
   data.endTime = toHHMM(toMinutes(startTime) + durationMin);
   data.staffPhone = staffPhone;
 
-  // Note: unlike the pre-existing `isRangeFree` check above, the DB-level
-  // appointment_no_overlap constraint (see prisma/ensure-constraints.mjs)
-  // cannot be bypassed by body.force — unlike the app-level check, it has no
-  // notion of an intentional override. A `force:true` request that would
-  // create a real overlap for the same professional now still gets rejected
-  // (as the same 409 conflict below) instead of succeeding. This is a
-  // deliberate consequence of the protection being a genuine last line of
-  // defense, per this round's explicit requirement.
+  // Backstop for a genuine race between two admin requests: the hard check
+  // above already rules out overlaps in the normal case, but the DB-level
+  // appointment_no_overlap constraint (prisma/ensure-constraints.mjs) is the
+  // real, unconditional guarantee — it has no force/override path at all.
   let appointment;
   try {
     appointment = await prisma.appointment.create({ data, include: { service: true } });
   } catch (err) {
     if (!isOverlapConstraintError(err)) throw err;
-    return NextResponse.json({ error: 'Esse horário acabou de ficar indisponível. Escolha outro.', conflict: true }, { status: 409 });
+    return NextResponse.json({ error: ACTIVE_APPOINTMENT_CONFLICT_MESSAGE, conflict: true, conflictType: 'appointment' }, { status: 409 });
   }
 
   return NextResponse.json({

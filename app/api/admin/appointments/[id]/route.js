@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
-import { isRangeFree } from '../../../../../lib/availability';
+import { isRangeFree, hasActiveAppointmentOverlap, ACTIVE_APPOINTMENT_CONFLICT_MESSAGE } from '../../../../../lib/availability';
 import { APPOINTMENT_STATUS, toMinutes, toHHMM } from '../../../../../lib/studio';
 import { isOverlapConstraintError } from '../../../../../lib/db-errors';
 
@@ -101,9 +101,18 @@ export async function PATCH(request, { params }) {
 
   if (reschedule) {
     if (!durationMin) return NextResponse.json({ error: 'Duração do serviço não definida.' }, { status: 400 });
+
+    // Hard rule, never bypassable by force:true — see the POST route for
+    // the full rationale (block conflicts stay force-able; overlapping
+    // active appointments for the same professional never are).
+    const activeConflict = await hasActiveAppointmentOverlap({ dateISO: date, startTime, durationMin, excludeAppointmentId: id, staffPhone });
+    if (activeConflict) {
+      return NextResponse.json({ error: ACTIVE_APPOINTMENT_CONFLICT_MESSAGE, conflict: true, conflictType: 'appointment' }, { status: 409 });
+    }
+
     if (!body.force) {
       const free = await isRangeFree({ dateISO: date, startTime, durationMin, excludeAppointmentId: id, staffPhone });
-      if (!free) return NextResponse.json({ error: 'Esse horário conflita com outro agendamento ou bloqueio.', conflict: true }, { status: 409 });
+      if (!free) return NextResponse.json({ error: 'Esse horário conflita com um bloqueio de agenda.', conflict: true, conflictType: 'block' }, { status: 409 });
     }
     data.date = date;
     data.startTime = startTime;
@@ -120,7 +129,7 @@ export async function PATCH(request, { params }) {
     appointment = await prisma.appointment.update({ where: { id }, data, include: { service: true } });
   } catch (err) {
     if (isOverlapConstraintError(err)) {
-      return NextResponse.json({ error: 'Esse horário acabou de ficar indisponível. Escolha outro.', conflict: true }, { status: 409 });
+      return NextResponse.json({ error: ACTIVE_APPOINTMENT_CONFLICT_MESSAGE, conflict: true, conflictType: 'appointment' }, { status: 409 });
     }
     appointment = null;
   }

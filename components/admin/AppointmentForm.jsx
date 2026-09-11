@@ -25,7 +25,7 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
-  const [conflict, setConflict] = useState(false);
+  const [conflict, setConflict] = useState(null); // null | { message, type: 'appointment' | 'block' }
 
   const [mode, setMode] = useState('catalog');
   const [serviceId, setServiceId] = useState('');
@@ -46,7 +46,7 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset form status on open
     setError(null);
-    setConflict(false);
+    setConflict(null);
     fetch('/api/admin/services').then((r) => r.json()).then((data) => {
       if (cancelled) return;
       setServices((data.services || []).filter((s) => s.active));
@@ -133,7 +133,13 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
     const data = await res.json().catch(() => ({}));
     setSaving(false);
 
-    if (res.status === 409 && data.conflict) { setConflict(true); return; }
+    if (res.status === 409 && data.conflict) {
+      // Default to 'appointment' (no override shown) for any conflict that
+      // doesn't explicitly say it's a block — the safe failure mode is
+      // never offering a bypass, not accidentally offering one.
+      setConflict({ message: data.error, type: data.conflictType === 'block' ? 'block' : 'appointment' });
+      return;
+    }
     if (!res.ok) { setError(data.error || 'Não foi possível salvar.'); return; }
 
     onSaved();
@@ -230,8 +236,14 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
 
             {conflict && (
               <div style={{ padding: '12px 16px', background: 'var(--nude-300)', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <span style={{ fontSize: 'var(--text-small)', color: 'var(--danger-500)' }}>Esse horário conflita com outro agendamento ou bloqueio.</span>
-                <Button type="button" size="sm" variant="secondary" fullWidth={m} onClick={() => submit(null, true)} disabled={saving}>Confirmar mesmo assim</Button>
+                <span style={{ fontSize: 'var(--text-small)', color: 'var(--danger-500)' }}>{conflict.message}</span>
+                {conflict.type === 'block' && (
+                  // Only a schedule block (the admin's own note — lunch,
+                  // vacation, day off) can be overridden. An overlapping
+                  // active appointment for the same professional never
+                  // offers this — see hasActiveAppointmentOverlap.
+                  <Button type="button" size="sm" variant="secondary" fullWidth={m} onClick={() => submit(null, true)} disabled={saving}>Confirmar mesmo assim</Button>
+                )}
               </div>
             )}
             {error && <p style={{ margin: 0, color: 'var(--danger-500)', fontSize: 'var(--text-small)' }}>{error}</p>}
