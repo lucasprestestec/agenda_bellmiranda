@@ -5,6 +5,7 @@ import { isSlotStillAvailable } from '../../../../lib/availability';
 import { toServiceView } from '../../../../lib/services';
 import { toMinutes, toHHMM, APPOINTMENT_STATUS } from '../../../../lib/studio';
 import { samePhone } from '../../../../lib/phone';
+import { isOverlapConstraintError } from '../../../../lib/db-errors';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -59,22 +60,32 @@ export async function POST(request) {
 
   const endTime = toHHMM(toMinutes(startTime) + service.durationMin);
 
-  const appointment = await prisma.$transaction(async (tx) => {
-    const stillFree = await isSlotStillAvailable({ dateISO: date, startTime, durationMin: service.durationMin, staffPhone });
-    if (!stillFree) return null;
-    return tx.appointment.create({
-      data: {
-        serviceId: service.id,
-        clientName,
-        clientPhone,
-        wantsReminder,
-        date,
-        startTime,
-        endTime,
-        status: APPOINTMENT_STATUS.CONFIRMED,
-      },
+  // Same last-line-of-defense as the public booking route: the
+  // appointment_no_overlap exclusion constraint catches a genuine race even
+  // if this pre-check and another request's both pass concurrently.
+  let appointment;
+  try {
+    appointment = await prisma.$transaction(async (tx) => {
+      const stillFree = await isSlotStillAvailable({ dateISO: date, startTime, durationMin: service.durationMin, staffPhone });
+      if (!stillFree) return null;
+      return tx.appointment.create({
+        data: {
+          serviceId: service.id,
+          clientName,
+          clientPhone,
+          wantsReminder,
+          date,
+          startTime,
+          endTime,
+          status: APPOINTMENT_STATUS.CONFIRMED,
+          staffPhone: service.staffPhone,
+        },
+      });
     });
-  });
+  } catch (err) {
+    if (!isOverlapConstraintError(err)) throw err;
+    appointment = null;
+  }
 
   if (!appointment) {
     return NextResponse.json({ error: 'Esse horário acabou de ficar indisponível. Escolha outro.', conflict: true }, { status: 409 });

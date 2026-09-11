@@ -37,6 +37,15 @@ model Appointment {
   customServiceName String?
   customDurationMin Int?
   customPriceCents  Int?
+  // Denormalized copy of service.staffPhone at write time (null for ad-hoc /
+  // no-staff appointments, same as the service it came from). Exists solely
+  // so the DB-level `appointment_no_overlap` exclusion constraint — added
+  // via prisma/ensure-constraints.mjs, since Postgres EXCLUDE constraints
+  // have no Prisma schema representation — can check for conflicts without
+  // joining Service (exclusion constraints can't reference other tables).
+  // Every code path that creates/reschedules/reassigns an appointment must
+  // keep this in sync with service.staffPhone.
+  staffPhone    String?
   clientName    String
   clientPhone   String
   note          String?

@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push --accept-data-loss && node prisma/seed.mjs && next build",
+    "build": "prisma generate && prisma db push --accept-data-loss && node prisma/ensure-constraints.mjs && node prisma/seed.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "db:seed": "node prisma/seed.mjs",
+    "db:ensure-constraints": "node prisma/ensure-constraints.mjs",
     "hash-password": "node scripts/hash-password.mjs"
   },
   "dependencies": {

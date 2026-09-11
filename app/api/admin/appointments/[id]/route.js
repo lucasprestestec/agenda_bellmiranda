@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import { isRangeFree } from '../../../../../lib/availability';
 import { APPOINTMENT_STATUS, toMinutes, toHHMM } from '../../../../../lib/studio';
+import { isOverlapConstraintError } from '../../../../../lib/db-errors';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -108,8 +109,21 @@ export async function PATCH(request, { params }) {
     data.startTime = startTime;
     data.endTime = toHHMM(toMinutes(startTime) + durationMin);
   }
+  // Keep the denormalized staffPhone (used by the DB-level
+  // appointment_no_overlap constraint) in sync with whatever service this
+  // appointment ends up pointing at, on every PATCH — cheap and always
+  // correct, and backfills any row that predates this column.
+  data.staffPhone = staffPhone;
 
-  const appointment = await prisma.appointment.update({ where: { id }, data, include: { service: true } }).catch(() => null);
+  let appointment;
+  try {
+    appointment = await prisma.appointment.update({ where: { id }, data, include: { service: true } });
+  } catch (err) {
+    if (isOverlapConstraintError(err)) {
+      return NextResponse.json({ error: 'Esse horário acabou de ficar indisponível. Escolha outro.', conflict: true }, { status: 409 });
+    }
+    appointment = null;
+  }
   if (!appointment) return NextResponse.json({ error: 'Agendamento não encontrado.' }, { status: 404 });
 
   return NextResponse.json({ appointment });

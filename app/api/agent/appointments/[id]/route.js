@@ -5,6 +5,7 @@ import { isRangeFree } from '../../../../../lib/availability';
 import { toServiceView } from '../../../../../lib/services';
 import { toMinutes, toHHMM, APPOINTMENT_STATUS } from '../../../../../lib/studio';
 import { samePhone } from '../../../../../lib/phone';
+import { isOverlapConstraintError } from '../../../../../lib/db-errors';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -62,9 +63,18 @@ export async function PATCH(request, { params }) {
     data.date = date;
     data.startTime = startTime;
     data.endTime = toHHMM(toMinutes(startTime) + durationMin);
+    // No service reassignment on this route, so staffPhone can't change —
+    // but keep it in sync in case an older row predates this column.
+    data.staffPhone = existing.service.staffPhone;
   }
 
-  const appointment = await prisma.appointment.update({ where: { id }, data, include: { service: true } });
+  let appointment;
+  try {
+    appointment = await prisma.appointment.update({ where: { id }, data, include: { service: true } });
+  } catch (err) {
+    if (!isOverlapConstraintError(err)) throw err;
+    return NextResponse.json({ error: 'Esse horário acabou de ficar indisponível. Escolha outro.', conflict: true }, { status: 409 });
+  }
 
   return NextResponse.json({
     appointment: {

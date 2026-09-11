@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/prisma';
 import { getServiceBySlug, toServiceView } from '../../../lib/services';
 import { isSlotStillAvailable } from '../../../lib/availability';
 import { toMinutes, toHHMM, DEPOSIT_RATE, APPOINTMENT_STATUS } from '../../../lib/studio';
+import { isOverlapConstraintError } from '../../../lib/db-errors';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -40,23 +41,38 @@ export async function POST(request) {
 
   const endTime = toHHMM(toMinutes(startTime) + service.durationMin);
 
-  const appointment = await prisma.$transaction(async (tx) => {
-    const stillFree = await isSlotStillAvailable({ dateISO: date, startTime, durationMin: service.durationMin, staffPhone: service.staffPhone });
-    if (!stillFree) return null;
-    return tx.appointment.create({
-      data: {
-        serviceId: service.id,
-        clientName,
-        clientPhone,
-        note,
-        wantsReminder: Boolean(wantsReminder),
-        date,
-        startTime,
-        endTime,
-        status: APPOINTMENT_STATUS.CONFIRMED,
-      },
+  // The isSlotStillAvailable re-check above is a fast path for the common
+  // case (no race) — it's a plain SELECT with no lock, so it can't rule out
+  // a second request landing between the check and the INSERT. The real
+  // guarantee is the `appointment_no_overlap` exclusion constraint on the
+  // Appointment table itself (see prisma/ensure-constraints.mjs): Postgres
+  // enforces it atomically as part of the INSERT, across concurrent
+  // transactions/processes, so a genuine race still can't create two
+  // overlapping appointments even if both requests' pre-checks pass.
+  let appointment;
+  try {
+    appointment = await prisma.$transaction(async (tx) => {
+      const stillFree = await isSlotStillAvailable({ dateISO: date, startTime, durationMin: service.durationMin, staffPhone: service.staffPhone });
+      if (!stillFree) return null;
+      return tx.appointment.create({
+        data: {
+          serviceId: service.id,
+          clientName,
+          clientPhone,
+          note,
+          wantsReminder: Boolean(wantsReminder),
+          date,
+          startTime,
+          endTime,
+          status: APPOINTMENT_STATUS.CONFIRMED,
+          staffPhone: service.staffPhone,
+        },
+      });
     });
-  });
+  } catch (err) {
+    if (!isOverlapConstraintError(err)) throw err;
+    appointment = null;
+  }
 
   if (!appointment) {
     return NextResponse.json({ error: 'Esse horário acabou de ficar indisponível. Escolha outro.' }, { status: 409 });

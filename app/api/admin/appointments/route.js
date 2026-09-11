@@ -3,6 +3,7 @@ import { prisma } from '../../../../lib/prisma';
 import { isRangeFree } from '../../../../lib/availability';
 import { toHHMM, toMinutes, APPOINTMENT_STATUS } from '../../../../lib/studio';
 import { toAppointmentServiceView } from '../../../../lib/services';
+import { isOverlapConstraintError } from '../../../../lib/db-errors';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -34,6 +35,9 @@ export async function POST(request) {
     date, startTime,
     status: APPOINTMENT_STATUS.CONFIRMED,
   };
+  // staffPhone is assigned to `data` further down, once it's resolved from
+  // either the catalog service or left null for an ad-hoc one-off — needed
+  // so the appointment_no_overlap DB constraint can see this row at all.
 
   if (serviceId) {
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
@@ -64,8 +68,23 @@ export async function POST(request) {
   }
 
   data.endTime = toHHMM(toMinutes(startTime) + durationMin);
+  data.staffPhone = staffPhone;
 
-  const appointment = await prisma.appointment.create({ data, include: { service: true } });
+  // Note: unlike the pre-existing `isRangeFree` check above, the DB-level
+  // appointment_no_overlap constraint (see prisma/ensure-constraints.mjs)
+  // cannot be bypassed by body.force — unlike the app-level check, it has no
+  // notion of an intentional override. A `force:true` request that would
+  // create a real overlap for the same professional now still gets rejected
+  // (as the same 409 conflict below) instead of succeeding. This is a
+  // deliberate consequence of the protection being a genuine last line of
+  // defense, per this round's explicit requirement.
+  let appointment;
+  try {
+    appointment = await prisma.appointment.create({ data, include: { service: true } });
+  } catch (err) {
+    if (!isOverlapConstraintError(err)) throw err;
+    return NextResponse.json({ error: 'Esse horário acabou de ficar indisponível. Escolha outro.', conflict: true }, { status: 409 });
+  }
 
   return NextResponse.json({
     appointment: {
