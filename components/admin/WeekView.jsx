@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '../core/Button';
+import { IconButton } from '../core/IconButton';
 import { Icon } from '../core/Icon';
 import { WEEKDAY_LABELS } from '../../lib/studio';
 import { addDays, parseISO } from '../../lib/calendar';
@@ -47,16 +48,21 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
           const appts = dayData?.appointments || [];
           return (
             <div key={iso} style={{ border: '1px solid ' + (isToday ? 'var(--rose-500)' : 'var(--border-hairline)'),
-              borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button onClick={() => onSelectDay(iso)} style={{ border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex',
-                alignItems: 'baseline', gap: '10px', background: 'transparent' }}>
-                <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.25rem', color: isToday ? 'var(--rose-500)' : 'var(--text-heading)' }}>
-                  {parseISO(iso).getDate()}
-                </span>
-                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                  {WEEKDAY_LABELS[weekday]}
-                </span>
-              </button>
+              borderRadius: 'var(--radius-sm)', padding: '12px 12px 10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <button onClick={() => onSelectDay(iso)} style={{ border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex',
+                  alignItems: 'baseline', gap: '10px', background: 'transparent' }}>
+                  <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.25rem', color: isToday ? 'var(--rose-500)' : 'var(--text-heading)' }}>
+                    {parseISO(iso).getDate()}
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                    {WEEKDAY_LABELS[weekday]}
+                  </span>
+                </button>
+                <IconButton label={`Novo agendamento em ${iso}`} variant="bare" size={34} onClick={() => onCreateAt(iso)}>
+                  <Icon name="plus" size={16} />
+                </IconButton>
+              </div>
               {loading ? null : appts.length === 0 ? (
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Nenhum agendamento.</span>
               ) : (
@@ -83,7 +89,6 @@ export function WeekView({ weekStart, refreshToken, today, onSelectDay, onEditAp
               ) : dayData?.blockedCount > 0 && (
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{dayData.blockedCount} bloqueio(s)</span>
               )}
-              <Button size="sm" variant="secondary" fullWidth iconLeft={<Icon name="plus" size={14} />} onClick={() => onCreateAt(iso)}>Novo agendamento</Button>
             </div>
           );
         })}

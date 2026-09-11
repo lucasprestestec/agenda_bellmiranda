@@ -29,7 +29,7 @@ export default async function HomePage() {
         <WhyBell />
         <Gallery />
         <Testimonials />
-        <BookingFlow services={services} />
+        <BookingFlow services={services} variant="embedded" />
       </main>
       <Footer />
       <SiteWhatsAppFab />

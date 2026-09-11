@@ -184,11 +184,23 @@ export function DayView({ date, refreshToken, onEdit, mobile, staffPhone, staff 
                         <WhatsAppBadge label="Confirmação" sentAt={a.confirmationSentAt} />
                         <WhatsAppBadge label="Lembrete" sentAt={a.reminderSentAt} skip={!a.wantsReminder} />
                       </div>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                        <Button size="sm" variant="ghost" onClick={() => onEdit(a.id)} iconLeft={<Icon name="pencil" size={13} />}>Editar</Button>
-                        {a.status !== 'COMPLETED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'COMPLETED')}>Concluir</Button>}
-                        {a.status !== 'CANCELLED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CANCELLED')}>Cancelar</Button>}
-                        {a.status !== 'CONFIRMED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CONFIRMED')}>Reabrir</Button>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <IconButton label="Editar" variant="bare" size={mobile ? 36 : 30} onClick={() => onEdit(a.id)}>
+                          <Icon name="pencil" size={15} />
+                        </IconButton>
+                        {a.status !== 'COMPLETED' && (
+                          <IconButton label="Concluir" variant="bare" size={mobile ? 36 : 30} style={{ color: 'var(--success-500)' }} onClick={() => setStatus(a.id, 'COMPLETED')}>
+                            <Icon name="check" size={16} />
+                          </IconButton>
+                        )}
+                        {a.status !== 'CANCELLED' && (
+                          <IconButton label="Cancelar" variant="bare" size={mobile ? 36 : 30} style={{ color: 'var(--danger-500)' }} onClick={() => setStatus(a.id, 'CANCELLED')}>
+                            <Icon name="x" size={16} />
+                          </IconButton>
+                        )}
+                        {a.status !== 'CONFIRMED' && (
+                          <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CONFIRMED')}>Reabrir</Button>
+                        )}
                       </div>
                     </div>
                   </div>
