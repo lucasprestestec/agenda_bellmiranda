@@ -150,44 +150,42 @@ export function DayView({ date, refreshToken, onEdit, mobile, staffPhone, staff 
               const isNext = nextAppointment?.id === a.id;
               const person = staffFor(a.service, staff);
               return (
-                <Surface key={a.id} padding={mobile ? 16 : 20} elevation="xs" style={{
+                <Surface key={a.id} padding={mobile ? 12 : 14} radius="var(--radius-sm)" elevation="none" style={{
                   borderLeft: '3px solid ' + (person ? person.accent : 'var(--border-strong)'),
-                  opacity: isPast ? 0.55 : 1,
+                  opacity: isPast ? 0.5 : 1,
                   background: isNext ? 'var(--surface-alt)' : undefined,
                 }}>
-                  <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', gap: mobile ? '14px' : '20px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.375rem', color: 'var(--cocoa-800)' }}>
-                          {a.startTime} – {a.endTime}
+                  <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', justifyContent: 'space-between', gap: mobile ? '10px' : '16px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
+                      <span style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '0.9375rem', color: 'var(--cocoa-800)' }}>
+                          {a.startTime}–{a.endTime}
                         </span>
+                        <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.875rem', color: 'var(--ink-900)' }}>{a.clientName || 'Sem nome'}</span>
                         {isNext && (
-                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', fontWeight: 700, letterSpacing: '0.08em',
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9px', fontWeight: 800, letterSpacing: '0.08em',
                             textTransform: 'uppercase', color: 'var(--rose-600)' }}>Próximo</span>
                         )}
                       </span>
-                      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 'var(--text-body)' }}>{a.clientName || 'Sem nome'}{a.clientPhone ? ` · ${a.clientPhone}` : ''}</span>
-                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>
+                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         {a.service.name}{a.service.adhoc ? ' (avulso)' : ''}
-                        {' · ' + [a.service.duration, a.service.price || 'preço a definir'].filter(Boolean).join(' · ')}
+                        {' · ' + [a.service.duration, a.service.price || 'preço a definir', a.clientPhone].filter(Boolean).join(' · ')}
                       </span>
-                      {a.note && <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-small)', color: 'var(--text-muted)' }}>Obs: {a.note}</span>}
+                      {a.note && <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Obs: {a.note}</span>}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: mobile ? 'stretch' : 'flex-end', gap: '10px' }}>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignSelf: mobile ? 'flex-start' : 'flex-end', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
+                    <div style={{ display: 'flex', flexDirection: mobile ? 'column' : 'row', alignItems: mobile ? 'stretch' : 'center', gap: mobile ? '8px' : '14px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                         {!staffPhone && person && (
-                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700,
-                            padding: '4px 9px', borderRadius: 'var(--radius-pill)', background: person.soft, color: person.accent }}>{person.staffName}</span>
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', fontWeight: 700,
+                            padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: person.soft, color: person.accent }}>{person.staffName}</span>
                         )}
-                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
-                          padding: '4px 10px', borderRadius: 'var(--radius-pill)', background: color.bg, color: color.fg }}>{STATUS_LABEL[a.status]}</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+                          padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: color.bg, color: color.fg }}>{STATUS_LABEL[a.status]}</span>
                         <WhatsAppBadge label="Confirmação" sentAt={a.confirmationSentAt} />
                         <WhatsAppBadge label="Lembrete" sentAt={a.reminderSentAt} skip={!a.wantsReminder} />
                       </div>
-                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: mobile ? 'flex-start' : 'flex-end' }}>
-                        <Button size="sm" variant="ghost" onClick={() => onEdit(a.id)} iconLeft={<Icon name="pencil" size={14} />}>Editar</Button>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        <Button size="sm" variant="ghost" onClick={() => onEdit(a.id)} iconLeft={<Icon name="pencil" size={13} />}>Editar</Button>
                         {a.status !== 'COMPLETED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'COMPLETED')}>Concluir</Button>}
                         {a.status !== 'CANCELLED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CANCELLED')}>Cancelar</Button>}
                         {a.status !== 'CONFIRMED' && <Button size="sm" variant="ghost" onClick={() => setStatus(a.id, 'CONFIRMED')}>Reabrir</Button>}
