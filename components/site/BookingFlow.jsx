@@ -42,6 +42,27 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
   const narrow = useMobile(430);
   const mobile = forcedMobile || viewportMobile;
 
+  // Group by who performs the service — with 3 professionals across ~17
+  // services, a flat list means a lot of scrolling to find the right one.
+  const staffGroups = useMemo(() => {
+    const map = new Map();
+    for (const s of services) {
+      const key = s.staffPhone || '__sem_staff';
+      if (!map.has(key)) map.set(key, { key, staffName: s.staffName, items: [] });
+      map.get(key).items.push(s);
+    }
+    return Array.from(map.values());
+  }, [services]);
+  const multiStaff = staffGroups.length > 1;
+
+  const initialGroupKey = useMemo(() => {
+    const withInitial = staffGroups.find((g) => g.items.some((s) => s.slug === initialServiceSlug));
+    return (withInitial || staffGroups[0])?.key;
+  }, [staffGroups, initialServiceSlug]);
+  const [staffCat, setStaffCat] = useState(initialGroupKey);
+  const activeGroup = staffGroups.find((g) => g.key === staffCat) || staffGroups[0];
+  const visibleServices = multiStaff ? (activeGroup?.items || services) : services;
+
   const initialBookable = services.find((s) => s.slug === initialServiceSlug) ? initialServiceSlug : services[0]?.slug;
   const [svcSlug, setSvcSlug] = useState(initialBookable);
   const service = useMemo(() => services.find((s) => s.slug === svcSlug) || services[0], [services, svcSlug]);
@@ -63,6 +84,12 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
+
+  function selectStaffCat(key) {
+    setStaffCat(key);
+    const group = staffGroups.find((g) => g.key === key);
+    if (group?.items[0]) { setSvcSlug(group.items[0].slug); setDetails(false); }
+  }
 
   useEffect(() => {
     if (!service) return;
@@ -186,8 +213,27 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
             </p>
 
             <div style={Object.assign({}, capsLabel, { display: 'block', margin: 'clamp(34px,4vw,52px) 0 18px' })}>Escolha seu serviço</div>
+
+            {multiStaff && (
+              <div className="bm-scroller" style={{ display: 'flex', gap: '8px', marginBottom: mobile ? '12px' : '16px', paddingBottom: '2px' }}>
+                {staffGroups.map((g) => {
+                  const on = g.key === activeGroup?.key;
+                  return (
+                    <button key={g.key} onClick={() => selectStaffCat(g.key)}
+                      style={{ flex: '0 0 auto', cursor: 'pointer', whiteSpace: 'nowrap', padding: '8px 15px',
+                        fontFamily: 'var(--font-sans)', fontSize: '0.75rem', fontWeight: 700,
+                        borderRadius: '999px', border: '1px solid ' + (on ? 'var(--espresso-900)' : 'var(--border-hairline)'),
+                        background: on ? 'var(--espresso-900)' : 'var(--surface-page)',
+                        color: on ? 'var(--ivory-100)' : 'var(--ink-500)' }}>
+                      {g.staffName || 'Outros serviços'}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: mobile ? '8px' : '12px' }}>
-              {services.map((s, i) => {
+              {visibleServices.map((s, i) => {
                 const on = svcSlug === s.slug;
                 return (
                   <button key={s.slug} onClick={() => { setSvcSlug(s.slug); setDetails(false); }}
