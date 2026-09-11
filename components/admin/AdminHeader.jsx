@@ -30,6 +30,9 @@ export function AdminHeader() {
           <Link href="/admin/servicos" style={{ border: 0, fontFamily: 'var(--font-sans)', fontSize: m ? '10px' : '11px', fontWeight: 600,
             letterSpacing: '0.14em', textTransform: 'uppercase', color: pathname === '/admin/servicos' ? 'var(--cocoa-800)' : 'var(--ink-500)',
             borderBottom: '1px solid ' + (pathname === '/admin/servicos' ? 'var(--rose-500)' : 'transparent'), paddingBottom: '3px' }}>Serviços</Link>
+          <Link href="/admin/financeiro" style={{ border: 0, fontFamily: 'var(--font-sans)', fontSize: m ? '10px' : '11px', fontWeight: 600,
+            letterSpacing: '0.14em', textTransform: 'uppercase', color: pathname === '/admin/financeiro' ? 'var(--cocoa-800)' : 'var(--ink-500)',
+            borderBottom: '1px solid ' + (pathname === '/admin/financeiro' ? 'var(--rose-500)' : 'transparent'), paddingBottom: '3px' }}>Financeiro</Link>
         </nav>
       </div>
       <Button variant="ghost" onClick={logout} iconRight={<Icon name="log-out" size={15} />}>Sair</Button>
