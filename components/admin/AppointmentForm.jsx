@@ -155,12 +155,20 @@ export function AppointmentForm({ open, onClose, appointmentId, defaults, onSave
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(30,22,20,.4)', zIndex: 100,
-      display: 'flex', alignItems: m ? 'stretch' : 'flex-start', justifyContent: 'center',
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
       padding: m ? 0 : '5vh 16px', overflowY: 'auto' }}
       onClick={onClose}>
+      {/* alignItems must stay 'flex-start' here (not 'stretch') — 'stretch'
+          clamps this card to exactly the container's cross size, so on
+          mobile any content taller than one screen spills past the card's
+          own background instead of growing it, exposing whatever sits
+          behind the backdrop (the admin bottom nav) under the trailing
+          buttons. minHeight is only a floor, so flex-start + minHeight
+          keeps the full-bleed look for short forms while letting tall ones
+          grow past one screen and scroll correctly. */}
       <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--surface-card)',
         borderRadius: m ? 0 : 'var(--radius-lg)', boxShadow: 'var(--shadow-md)', width: '100%',
-        maxWidth: m ? 'none' : '560px', minHeight: m ? '100vh' : 'auto', padding: m ? '22px 18px' : '32px' }}>
+        maxWidth: m ? 'none' : '560px', minHeight: m ? '100dvh' : 'auto', padding: m ? '22px 18px' : '32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <h2 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 300, fontSize: m ? '1.3rem' : '1.5rem', color: 'var(--text-heading)' }}>
             {editing ? 'Editar agendamento' : 'Novo agendamento'}
