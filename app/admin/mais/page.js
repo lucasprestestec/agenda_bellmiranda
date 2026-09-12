@@ -7,6 +7,7 @@ import { Icon } from '../../../components/core/Icon';
 
 const ITEMS = [
   { href: '/admin/servicos', label: 'Serviços', hint: 'Catálogo, preços e quem atende cada um', icon: 'sparkles' },
+  { href: '/admin/whatsapp', label: 'WhatsApp Business', hint: 'Conectar o número já ativo via Meta', icon: 'message-circle' },
 ];
 
 export default function AdminMaisPage() {
