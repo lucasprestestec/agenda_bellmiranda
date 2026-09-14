@@ -20,27 +20,27 @@ export default async function AgendarHomePage() {
   const featured = grouped.map((g) => g.items[0]).filter(Boolean).slice(0, 4);
 
   return (
-    <ClientAppShell greeting={{ title: 'Olá', subtitle: '— que bom ter você aqui' }}>
-      <div style={{ padding: '14px 18px 10px' }}>
+    <ClientAppShell greeting={{ title: 'Olá,', subtitle: 'Que bom ter você aqui!' }}>
+      <div style={{ padding: '4px 18px 14px' }}>
         <Link href="/agendar/servicos" style={{ border: '1px solid var(--border-hairline)', display: 'flex', alignItems: 'center', gap: '10px',
-          height: '44px', padding: '0 16px', borderRadius: 'var(--radius-pill)', background: 'var(--surface-card)' }}>
-          <Icon name="search" size={15} color="var(--text-muted)" />
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Buscar serviços…</span>
+          height: '48px', padding: '0 18px', borderRadius: 'var(--radius-pill)', background: 'var(--surface-card)', boxShadow: 'var(--shadow-xs)' }}>
+          <Icon name="search" size={16} color="var(--text-muted)" />
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Buscar serviços, tratamentos…</span>
         </Link>
       </div>
 
       {grouped.length > 0 && (
-        <div style={{ padding: '2px 18px 4px' }}>
+        <div style={{ padding: '2px 18px 8px' }}>
           <CategorySelector categories={grouped} />
         </div>
       )}
 
-      <div style={{ padding: '12px 18px' }}>
+      <div style={{ padding: '14px 18px 4px' }}>
         <EditorialBanner />
       </div>
 
       {featured.length > 0 && (
-        <div style={{ padding: '16px 0 4px' }}>
+        <div style={{ padding: '22px 0 4px' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '0 18px 12px' }}>
             <h2 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 400, fontSize: '1.0625rem', color: 'var(--ink-900)' }}>Serviços em destaque</h2>
             <Link href="/agendar/servicos" style={{ border: 0, fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 600,
@@ -52,7 +52,7 @@ export default async function AgendarHomePage() {
           <div className="bm-scroller" style={{ display: 'flex', gap: '12px', padding: '0 18px',
             WebkitMaskImage: 'linear-gradient(to right, black 92%, transparent 100%)',
             maskImage: 'linear-gradient(to right, black 92%, transparent 100%)' }}>
-            {featured.map((s, i) => <ServiceHighlightCard key={s.slug} service={s} index={i} />)}
+            {featured.map((s) => <ServiceHighlightCard key={s.slug} service={s} />)}
           </div>
         </div>
       )}

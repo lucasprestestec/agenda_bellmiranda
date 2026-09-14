@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ClientAppShell } from '../../../components/client/ClientAppShell';
+import { ServiceImage } from '../../../components/client/ServiceImage';
 import { Icon } from '../../../components/core/Icon';
 import { listActiveServices } from '../../../lib/services';
 import { groupByCategory } from '../../../lib/serviceCategories';
@@ -27,6 +28,7 @@ export default async function ServicosPage() {
             {items.map((s, i) => (
               <Link key={s.slug} href={`/reservar?servico=${s.slug}`} style={{ border: 0, display: 'flex', alignItems: 'center',
                 gap: '12px', padding: '13px 0', borderTop: i === 0 ? 'none' : '1px solid var(--border-hairline)' }}>
+                <ServiceImage service={s} size={52} radius="10px" />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-900)' }}>{s.name}</span>
                   {s.duration && (

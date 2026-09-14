@@ -9,6 +9,7 @@ import { Input } from '../forms/Input';
 import { Textarea } from '../forms/Textarea';
 import { Checkbox } from '../forms/Checkbox';
 import { Icon } from '../core/Icon';
+import { ServiceImage } from '../client/ServiceImage';
 import { Button } from '../core/Button';
 import { Ornament } from '../core/Ornament';
 import { useMobile } from '../../lib/useMobile';
@@ -239,7 +240,13 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
 
           <div style={{ width: '100%', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px',
             padding: '18px', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', border: '1px solid var(--border-hairline)' }}>
-            <SummaryRow label="Serviço" value={service.name} strong />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '12px',
+              borderBottom: '1px solid var(--border-hairline)' }}>
+              <ServiceImage service={service} size={52} radius="10px" />
+              <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.0625rem', lineHeight: 1.25, color: 'var(--ink-900)' }}>
+                {service.name}
+              </span>
+            </div>
             <SummaryRow label="Data" value={dayFullFor(days, day)} />
             <SummaryRow label="Horário" value={endTime ? `${startTime} – ${endTime}` : startTime} />
             {service.staffName && <SummaryRow label="Profissional" value={service.staffName} />}
@@ -543,7 +550,6 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
   const nextDisabled = (step === 'horario' && !canGoHorario) || (step === 'detalhes' && (!canSubmit || submitting));
   const nextLabel = step === 'servico' ? 'Continuar' : step === 'horario' ? 'Continuar' : (submitting ? 'Confirmando…' : 'Confirmar agendamento');
   const showSticky = (step === 'horario' && canGoHorario) || step === 'detalhes';
-  const photoIndex = (s) => services.indexOf(s) % 5 + 1;
 
   return (
     <section style={{ position: 'relative', background: 'var(--surface-page)',
@@ -595,7 +601,7 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
                         <button onClick={() => { setSvcSlug(s.slug); setExpandedService(expanded ? null : s.slug); }}
                           style={{ width: '100%', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center',
                             gap: '12px', padding: '10px 12px', border: 0, background: 'none' }}>
-                          <span className={`ph ph-w${photoIndex(s)}`} style={{ width: '46px', height: '46px', borderRadius: '10px', flexShrink: 0 }} />
+                          <ServiceImage service={s} size={46} radius="10px" />
                           <span style={{ flex: 1, minWidth: 0 }}>
                             <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '0.875rem',
                               color: 'var(--ink-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
@@ -610,7 +616,7 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
                         </button>
                         {expanded && (
                           <div style={{ padding: '0 12px 14px' }}>
-                            <span className={`ph ph-w${photoIndex(s)}`} style={{ display: 'block', width: '100%', aspectRatio: '16/9', borderRadius: '10px', marginBottom: '10px' }} />
+                            <ServiceImage service={s} ratio="16/9" radius="10px" sizes="100vw" style={{ marginBottom: '10px' }} />
                             {s.description && (
                               <p style={{ margin: '0 0 10px', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', lineHeight: 1.6, color: 'var(--ink-500)' }}>
                                 {s.description}
@@ -637,17 +643,49 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
 
         {step === 'horario' && (
           <>
+            <div style={{ margin: '-10px -18px 0' }}>
+              <ServiceImage service={service} ratio="16/10" radius="0" sizes="100vw">
+                <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(43,31,27,.42) 0%, rgba(43,31,27,0) 55%)' }} />
+              </ServiceImage>
+            </div>
+
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.0625rem', color: 'var(--ink-900)' }}>{service.name}</span>
-                <button onClick={() => setStep('servico')} style={ghostAction}>Trocar</button>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.375rem', lineHeight: 1.2, color: 'var(--ink-900)' }}>{service.name}</span>
+                <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.25rem', color: 'var(--ink-900)', flexShrink: 0, whiteSpace: 'nowrap' }}>{service.price}</span>
               </div>
-              {service.staffName && (
-                <p style={{ margin: '6px 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--ink-500)' }}>
-                  Atendido por <strong style={{ color: 'var(--ink-900)' }}>{service.staffName}</strong>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '4px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--ink-500)' }}>
+                  <Icon name="clock" size={12} /> {service.duration}
+                </span>
+                <button onClick={() => setStep('servico')} style={ghostAction}>Trocar serviço</button>
+              </div>
+              {service.description && (
+                <p style={{ margin: '10px 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', lineHeight: 1.6, color: 'var(--ink-500)' }}>
+                  {service.description}
                 </p>
               )}
             </div>
+
+            {service.staffName && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px',
+                borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', border: '1px solid var(--border-hairline)' }}>
+                {service.staffName === 'Bell' ? (
+                  <span className="ph ph-portrait" style={{ width: '42px', height: '42px', borderRadius: '50%', flexShrink: 0 }} />
+                ) : (
+                  <span style={{ width: '42px', height: '42px', borderRadius: '50%', flexShrink: 0, background: 'var(--nude-300)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--font-serif-display)', fontSize: '1rem', color: 'var(--cocoa-800)' }}>
+                    {service.staffName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <div>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 600,
+                    letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Atendimento com</span>
+                  <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontSize: '1.0625rem', color: 'var(--ink-900)' }}>{service.staffName}</span>
+                </div>
+              </div>
+            )}
 
             {formError && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
@@ -678,18 +716,18 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
                   ))}
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: '9px' }}>
                   {slots.map((s) => {
                     const on = time === s.value;
                     return (
                       <button key={s.value} disabled={s.disabled} onClick={() => setTime(s.value)}
-                        style={{ cursor: s.disabled ? 'not-allowed' : 'pointer', padding: '11px 0',
-                          fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', borderRadius: 'var(--radius-xs)',
-                          background: on ? 'var(--espresso-900)' : 'transparent',
-                          color: on ? 'var(--ivory-100)' : (s.disabled ? 'var(--taupe-500)' : 'var(--ink-900)'),
+                        style={{ cursor: s.disabled ? 'not-allowed' : 'pointer', padding: '13px 0',
+                          fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.8125rem', borderRadius: 'var(--radius-sm)',
+                          background: on ? 'var(--blush-400)' : 'var(--surface-card)',
+                          color: on ? 'var(--cocoa-800)' : (s.disabled ? 'var(--taupe-500)' : 'var(--ink-900)'),
                           textDecoration: s.disabled ? 'line-through' : 'none',
                           opacity: s.disabled ? .55 : 1,
-                          border: '1px solid ' + (on ? 'var(--espresso-900)' : 'var(--border-hairline)') }}>{s.value}</button>
+                          border: '1px solid ' + (on ? 'var(--blush-400)' : 'var(--border-hairline)') }}>{s.value}</button>
                     );
                   })}
                 </div>
@@ -706,7 +744,7 @@ export function BookingFlow({ services: allServices, initialServiceSlug, layout 
             </div>
 
             <div style={{ display: 'flex', gap: '12px', padding: '12px', borderRadius: 'var(--radius-md)', background: 'var(--ivory-200)' }}>
-              <span className={`ph ph-w${photoIndex(service)}`} style={{ width: '52px', height: '52px', borderRadius: '10px', flexShrink: 0 }} />
+              <ServiceImage service={service} size={52} radius="10px" />
               <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '0.875rem', color: 'var(--ink-900)' }}>{service.name}</span>
                 <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--ink-500)' }}>{service.duration} · {service.price}</span>
