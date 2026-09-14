@@ -5,6 +5,8 @@ import { isAuthorizedCronRequest } from '../../../../lib/cron';
 const FIELD_BY_TYPE = {
   confirmation: 'confirmationSentAt',
   reminder: 'reminderSentAt',
+  cancellation: 'cancellationSentAt',
+  reschedule: 'rescheduleSentAt',
 };
 
 // Called by the external WhatsApp agent once EVERY recipient in an item's
@@ -31,7 +33,7 @@ export async function POST(request) {
   const { appointmentId, type } = body;
   const field = FIELD_BY_TYPE[type];
   if (!appointmentId || !field) {
-    return NextResponse.json({ error: 'appointmentId e type ("confirmation" ou "reminder") são obrigatórios.' }, { status: 400 });
+    return NextResponse.json({ error: 'appointmentId e type ("confirmation", "reminder", "cancellation" ou "reschedule") são obrigatórios.' }, { status: 400 });
   }
 
   try {

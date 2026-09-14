@@ -66,6 +66,18 @@ export async function PATCH(request, { params }) {
     // No service reassignment on this route, so staffPhone can't change —
     // but keep it in sync in case an older row predates this column.
     data.staffPhone = existing.service.staffPhone;
+
+    // Same rule as the admin route: only an actual move notifies (see
+    // prisma/schema.prisma for why these fields exist). date/startTime here
+    // are already resolved to their final values, so comparing against
+    // existing is enough — no separate "reschedule" vs "timeChanged" split
+    // needed like the admin route has (this route never touches service).
+    if (date !== existing.date || startTime !== existing.startTime) {
+      data.previousDate = existing.date;
+      data.previousStartTime = existing.startTime;
+      data.rescheduledAt = new Date();
+      data.rescheduleSentAt = null;
+    }
   }
 
   let appointment;

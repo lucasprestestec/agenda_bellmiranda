@@ -7,6 +7,10 @@ import {
   reminderTemplate,
   teamConfirmationTemplate,
   teamReminderTemplate,
+  cancellationTemplate,
+  teamCancellationTemplate,
+  rescheduleTemplate,
+  teamRescheduleTemplate,
   dailySummaryTemplate,
 } from '../../../../lib/whatsapp/templates';
 import { dateToISO, APPOINTMENT_STATUS } from '../../../../lib/studio';
@@ -43,7 +47,7 @@ export async function GET(request) {
   const today = dateToISO(new Date());
   const tomorrow = addDays(today, 1);
 
-  const [toConfirm, toRemind, todaysAppointments] = await Promise.all([
+  const [toConfirm, toRemind, toNotifyCancel, toNotifyReschedule, todaysAppointments] = await Promise.all([
     prisma.appointment.findMany({
       where: { status: APPOINTMENT_STATUS.CONFIRMED, confirmationSentAt: null },
       include: { service: true },
@@ -55,6 +59,20 @@ export async function GET(request) {
         wantsReminder: true,
         reminderSentAt: null,
       },
+      include: { service: true },
+    }),
+    prisma.appointment.findMany({
+      where: { status: APPOINTMENT_STATUS.CANCELLED, cancellationSentAt: null },
+      include: { service: true },
+    }),
+    // rescheduledAt set + rescheduleSentAt null = moved since the last time
+    // this type was marked sent (or never sent). A cancelled appointment
+    // that was also rescheduled before being cancelled still matches this —
+    // harmless (a "your time moved" text landing after cancellation is a
+    // minor ordering issue, not a wrong notification), and simpler than
+    // excluding CANCELLED here just to avoid it.
+    prisma.appointment.findMany({
+      where: { rescheduledAt: { not: null }, rescheduleSentAt: null },
       include: { service: true },
     }),
     prisma.appointment.findMany({
@@ -96,6 +114,38 @@ export async function GET(request) {
     };
   });
 
+  const cancellations = toNotifyCancel.map((appointment) => {
+    const serviceView = toAppointmentServiceView(appointment);
+    return {
+      appointmentId: appointment.id,
+      clientName: appointment.clientName,
+      date: appointment.date,
+      startTime: appointment.startTime,
+      recipients: buildRecipients({
+        appointment,
+        serviceView,
+        clientMessage: cancellationTemplate({ appointment, serviceView }),
+        teamMessage: teamCancellationTemplate({ appointment, serviceView }),
+      }),
+    };
+  });
+
+  const reschedules = toNotifyReschedule.map((appointment) => {
+    const serviceView = toAppointmentServiceView(appointment);
+    return {
+      appointmentId: appointment.id,
+      clientName: appointment.clientName,
+      date: appointment.date,
+      startTime: appointment.startTime,
+      recipients: buildRecipients({
+        appointment,
+        serviceView,
+        clientMessage: rescheduleTemplate({ appointment, serviceView }),
+        teamMessage: teamRescheduleTemplate({ appointment, serviceView }),
+      }),
+    };
+  });
+
   const appointmentsWithServiceView = todaysAppointments.map((appointment) => ({
     ...appointment,
     serviceView: toAppointmentServiceView(appointment),
@@ -108,5 +158,5 @@ export async function GET(request) {
     text: summaryMessage.text,
   };
 
-  return NextResponse.json({ confirmations, reminders, dailySummary });
+  return NextResponse.json({ confirmations, reminders, cancellations, reschedules, dailySummary });
 }

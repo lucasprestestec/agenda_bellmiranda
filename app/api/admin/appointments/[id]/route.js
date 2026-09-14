@@ -118,6 +118,18 @@ export async function PATCH(request, { params }) {
     data.startTime = startTime;
     data.endTime = toHHMM(toMinutes(startTime) + durationMin);
   }
+
+  // Notify only on an actual date/time move — `reschedule` above also
+  // covers a same-slot service swap, which isn't a "horário mudou" event
+  // for the client. previousDate/previousStartTime capture the value being
+  // replaced, before data.date/data.startTime overwrite it.
+  const timeChanged = date !== existing.date || startTime !== existing.startTime;
+  if (timeChanged) {
+    data.previousDate = existing.date;
+    data.previousStartTime = existing.startTime;
+    data.rescheduledAt = new Date();
+    data.rescheduleSentAt = null;
+  }
   // Keep the denormalized staffPhone (used by the DB-level
   // appointment_no_overlap constraint) in sync with whatever service this
   // appointment ends up pointing at, on every PATCH — cheap and always

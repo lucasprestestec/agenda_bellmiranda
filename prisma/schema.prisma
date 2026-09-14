@@ -60,6 +60,20 @@ model Appointment {
   // double-sends (cron re-runs, retries) and lets /admin show send status.
   confirmationSentAt DateTime?
   reminderSentAt     DateTime?
+  cancellationSentAt DateTime?
+
+  // Reschedule tracking. previousDate/previousStartTime hold the values from
+  // right before the most recent move, so the notification can say "mudou de
+  // X para Y" — set by both PATCH routes whenever date or startTime actually
+  // changes (not on a same-slot service swap). rescheduledAt marks that a
+  // move happened; rescheduleSentAt is reset to null on every new move, so a
+  // second reschedule before the first notification goes out still notifies
+  // (the pending-messages query only cares that it's null, not *when* it
+  // last happened).
+  previousDate      String?
+  previousStartTime String?
+  rescheduledAt     DateTime?
+  rescheduleSentAt  DateTime?
 
   @@index([date])
 }
