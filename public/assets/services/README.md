@@ -26,9 +26,9 @@ aponte o campo `file` daquele serviço para o novo arquivo.
 | `spa-pes`              | `spa-dos-pes.webp`                      | Spa dos pés                      |
 | `reconstrucao-unha-pe` | `reconstrucao-de-unha-do-pe.webp`       | Reconstrução de unha do pé       |
 | `design-sobrancelha`   | `design-sobrancelha.webp`               | Design de Sobrancelha            |
-| `depilacao-buco`       | `depilacao-de-buco.webp`                | Depilação de Buço                |
-| `depilacao-axilas`     | `depilacao-de-axilas.webp`              | Depilação de Axilas              |
-| `depilacao-facial`     | `depilacao-facial.webp`                 | Depilação Facial                 |
+| `buco`                 | `depilacao-de-buco.webp`                | Depilação de Buço                |
+| `depilacao-axila`      | `depilacao-de-axilas.webp`              | Depilação de Axilas              |
+| `depilacao-face`       | `depilacao-facial.webp`                 | Depilação Facial                 |
 
 Se um arquivo faltar, a UI mostra um fundo nude discreto no lugar da foto —
 nunca uma imagem quebrada.
