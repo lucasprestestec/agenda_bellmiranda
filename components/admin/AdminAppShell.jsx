@@ -13,7 +13,9 @@ import { AdminBottomNav } from './AdminBottomNav';
 export function AdminAppShell({ children }) {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface-page)', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
-      <header style={{ padding: '14px var(--gutter) 4px',
+      {/* env() resolve 0 no navegador; em standalone no iPhone é o que mantém
+          o cabeçalho abaixo do notch/barra de status. */}
+      <header style={{ padding: 'calc(14px + env(safe-area-inset-top)) var(--gutter) 4px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Logo size={0.36} align="left" descriptor={false} />
         <Link href="/admin/mais" aria-label="Mais" style={{ border: 0, width: '32px', height: '32px', borderRadius: '50%',

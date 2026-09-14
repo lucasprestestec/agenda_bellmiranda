@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AdminAppShell } from '../../../components/admin/AdminAppShell';
+import { InstallHint } from '../../../components/admin/InstallHint';
 import { Icon } from '../../../components/core/Icon';
 
 const ITEMS = [
@@ -25,6 +26,7 @@ export default function AdminMaisPage() {
         <h1 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 400, fontSize: '1.375rem', color: 'var(--ink-900)' }}>Mais</h1>
       </div>
       <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <InstallHint />
         {ITEMS.map((item) => (
           <Link key={item.href} href={item.href} style={{ border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-md)',
             padding: '16px', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px' }}>

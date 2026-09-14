@@ -38,7 +38,8 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-alt)', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-alt)',
+      padding: 'calc(24px + env(safe-area-inset-top)) calc(24px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left))' }}>
       <form onSubmit={onSubmit} style={{ width: '100%', maxWidth: '360px', background: 'var(--surface-card)',
         border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-lg)', padding: '36px 30px',
         display: 'flex', flexDirection: 'column', gap: '22px', boxShadow: 'var(--shadow-sm)' }}>

@@ -3,7 +3,7 @@ import {
   CalendarDays, Calendar, Clock, User, UserRound, Users, Sparkles, Check, X, Plus,
   Trash2, LogOut, ChevronLeft, ChevronRight, Ban, Menu, ShieldCheck, Gem,
   HeartHandshake, Leaf, Heart, Crown, Pencil, Lock, Home, Search, Wallet, MoreHorizontal,
-  Bell, Hand, Droplet, Eye, TrendingUp, ReceiptText,
+  Bell, Hand, Droplet, Eye, TrendingUp, ReceiptText, ArrowDownToLine,
 } from 'lucide-react';
 
 // Lucide is the flagged substitution for the brand's (nonexistent) icon set —
@@ -25,6 +25,7 @@ const ICONS = {
   sparkles: Sparkles,
   check: Check,
   x: X,
+  'arrow-down-to-line': ArrowDownToLine,
   plus: Plus,
   trash: Trash2,
   'trash-2': Trash2,
