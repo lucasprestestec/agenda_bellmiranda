@@ -6,17 +6,40 @@ import { AppointmentForm } from './AppointmentForm';
 import { Icon } from '../core/Icon';
 import { dateToISO, formatPriceCents } from '../../lib/studio';
 import { formatLong } from '../../lib/calendar';
+import { toE164 } from '../../lib/phone';
 
 function staffFor(service, staffList) {
   if (!service?.staffPhone) return null;
   return staffList.find((s) => s.staffPhone === service.staffPhone) || null;
 }
 
+function initialsOf(name) {
+  const trimmed = (name || '').trim();
+  if (!trimmed) return '?';
+  const parts = trimmed.split(/\s+/);
+  return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : trimmed.slice(0, 2).toUpperCase();
+}
+
+function StatTile({ icon, value, label, wide }) {
+  return (
+    <div style={{ gridColumn: wide ? '1 / -1' : undefined, display: 'flex', alignItems: 'center', gap: '12px',
+      padding: '14px 16px', borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', border: '1px solid var(--border-hairline)' }}>
+      <span style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'var(--nude-300)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--champagne-600)' }}>
+        <Icon name={icon} size={16} />
+      </span>
+      <div style={{ minWidth: 0 }}>
+        <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontSize: '1.3125rem', lineHeight: 1.1, color: 'var(--ink-900)' }}>{value}</span>
+        <span style={{ display: 'block', marginTop: '2px', fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--ink-500)' }}>{label}</span>
+      </div>
+    </div>
+  );
+}
+
 // The screen a professional opens first: today, at a glance. Deliberately
-// lighter than /admin/agenda's day view — one summary line, one list,
-// status only surfaced as a small dot when something needs attention. Full
-// block management, week/month, and per-appointment editing beyond a quick
-// tap stay on /admin/agenda.
+// lighter than /admin/agenda's day view — full block management, week/
+// month, and per-appointment editing beyond a quick tap stay on
+// /admin/agenda.
 export function TodayView() {
   const today = dateToISO(new Date());
   const [staff, setStaff] = useState([]);
@@ -45,6 +68,9 @@ export function TodayView() {
 
   const active = appointments.filter((a) => a.status !== 'CANCELLED');
   const revenueCents = active.reduce((sum, a) => sum + (a.service?.priceCents || 0), 0);
+  // Real, derived from the same appointment list already fetched — never a
+  // second query, never estimated.
+  const uniqueClients = new Set(active.map((a) => toE164(a.clientPhone)).filter(Boolean)).size;
 
   function openCreate() {
     setFormAppointmentId(null);
@@ -63,30 +89,30 @@ export function TodayView() {
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ padding: '2px 18px 10px' }}>
-        <h1 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 400, fontSize: '1.375rem', color: 'var(--ink-900)' }}>Hoje</h1>
-        <p style={{ margin: '2px 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--ink-500)' }}>{formatLong(today)}</p>
+      <div style={{ padding: '2px 18px 14px' }}>
+        <h1 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 400, fontSize: '1.5rem', color: 'var(--ink-900)' }}>Hoje</h1>
+        <p style={{ margin: '3px 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--ink-500)' }}>{formatLong(today)}</p>
       </div>
 
       {staff.length > 0 && (
-        <div style={{ padding: '0 18px 10px' }}>
+        <div style={{ padding: '0 18px 14px' }}>
           <StaffSwitcher staff={staff} value={staffFilter} onChange={setStaffFilter} mobile />
         </div>
       )}
 
-      {/* One quiet line instead of two large stat cards — perceptible, not dominant. */}
-      <div style={{ padding: '0 18px 14px', display: 'flex', alignItems: 'center', gap: '8px',
-        fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--ink-500)' }}>
-        <span><strong style={{ color: 'var(--ink-900)' }}>{active.length}</strong> atendimento{active.length === 1 ? '' : 's'}</span>
-        <span style={{ color: 'var(--border-strong)' }}>•</span>
-        <span><strong style={{ color: 'var(--ink-900)' }}>{formatPriceCents(revenueCents) || 'R$ 0'}</strong> previsto</span>
+      <div style={{ padding: '0 18px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <StatTile icon="calendar-days" value={active.length} label={`Agendamento${active.length === 1 ? '' : 's'} hoje`} />
+        <StatTile icon="users" value={uniqueClients} label={`Cliente${uniqueClients === 1 ? '' : 's'} único${uniqueClients === 1 ? '' : 's'}`} />
+        <StatTile icon="wallet" value={formatPriceCents(revenueCents) || 'R$ 0'} label="Faturamento previsto" wide />
       </div>
 
-      <div style={{ borderTop: '1px solid var(--border-hairline)', padding: '2px 84px 0 18px' }}>
+      <div style={{ borderTop: '1px solid var(--border-hairline)', padding: '4px 18px 0' }}>
+        <span style={{ display: 'block', padding: '12px 0 6px', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700,
+          letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Próximos agendamentos</span>
         {loading ? (
-          <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.875rem', paddingTop: '14px' }}>Carregando…</p>
+          <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.875rem', paddingTop: '10px' }}>Carregando…</p>
         ) : appointments.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.875rem', paddingTop: '14px' }}>Nenhum agendamento hoje.</p>
+          <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.875rem', paddingTop: '10px' }}>Nenhum agendamento hoje.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {appointments.map((a, i) => {
@@ -95,29 +121,36 @@ export function TodayView() {
               const pendingConfirmation = !cancelled && !a.confirmationSentAt;
               return (
                 <button key={a.id} onClick={() => openEdit(a.id)} style={{ border: 0, background: 'none', cursor: 'pointer',
-                  textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '13px 0',
+                  textAlign: 'left', width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0',
                   borderTop: i === 0 ? 'none' : '1px solid var(--border-hairline)', opacity: cancelled ? 0.5 : 1 }}>
-                  <span style={{ width: '2px', alignSelf: 'stretch', borderRadius: '1px',
-                    background: person ? person.accent : 'var(--border-strong)' }} />
-                  <span style={{ width: '44px', flex: '0 0 auto', paddingTop: '1px', fontFamily: 'var(--font-sans)', fontWeight: 700,
+                  <span style={{ width: '42px', flex: '0 0 auto', paddingTop: '1px', fontFamily: 'var(--font-sans)', fontWeight: 700,
                     fontSize: '0.8125rem', color: 'var(--ink-900)' }}>{a.startTime}</span>
+                  <span style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
+                    background: person ? person.soft : 'var(--nude-300)', color: person ? person.accent : 'var(--cocoa-800)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--font-serif-display)', fontSize: '0.8125rem' }}>
+                    {initialsOf(a.clientName)}
+                  </span>
                   <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1px' }}>
                     <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '0.875rem',
                       color: 'var(--ink-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.clientName || 'Sem nome'}</span>
                     <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--ink-500)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.service?.name}</span>
-                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--taupe-500)',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {[!staffFilter && person?.staffName, a.service?.price].filter(Boolean).join(' · ')}
+                      {[a.service?.name, !staffFilter && person?.staffName, a.service?.price].filter(Boolean).join(' · ')}
                     </span>
                   </span>
                   {cancelled ? (
                     <span style={{ fontFamily: 'var(--font-sans)', fontSize: '9.5px', fontWeight: 700, color: 'var(--text-muted)',
-                      textTransform: 'uppercase', letterSpacing: '0.03em', flex: '0 0 auto', paddingTop: '3px' }}>Cancelado</span>
-                  ) : pendingConfirmation ? (
-                    <span title="Confirmação pendente" style={{ width: '7px', height: '7px', borderRadius: '50%', marginTop: '5px',
-                      background: 'var(--warning-500)', flex: '0 0 auto' }} />
-                  ) : null}
+                      textTransform: 'uppercase', letterSpacing: '0.03em', flex: '0 0 auto' }}>Cancelado</span>
+                  ) : (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: '0 0 auto',
+                      fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase',
+                      color: pendingConfirmation ? 'var(--warning-500)' : 'var(--success-500)' }}>
+                      {pendingConfirmation && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warning-500)' }} />}
+                      {pendingConfirmation ? 'Pendente' : 'Confirmado'}
+                      <Icon name="chevron-right" size={12} />
+                    </span>
+                  )}
                 </button>
               );
             })}

@@ -1,13 +1,42 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AdminAppShell } from '../../../components/admin/AdminAppShell';
+import { Icon } from '../../../components/core/Icon';
 import { useMobile } from '../../../lib/useMobile';
 import { formatPriceCents, WEEKDAY_LABELS } from '../../../lib/studio';
 import { formatWeekRange, parseISO } from '../../../lib/calendar';
 
 function centsToLabel(cents) {
   return formatPriceCents(cents) || 'R$ 0';
+}
+
+// Every number on this page is either returned directly by
+// /api/admin/financeiro or summed/averaged client-side from that same
+// response — never a second query, never estimated. Metrics the API
+// doesn't give us (unique clients, period-over-period change) are simply
+// not shown rather than guessed.
+function aggregate(staff) {
+  const totalCents = staff.reduce((s, x) => s + x.realizedCents, 0);
+  const totalCount = staff.reduce((s, x) => s + x.realizedCount, 0);
+  const avgTicketCents = totalCount > 0 ? Math.round(totalCents / totalCount) : 0;
+
+  const dayTotals = (staff[0]?.days || []).map((d, i) => ({
+    date: d.date, cents: staff.reduce((s, x) => s + (x.days[i]?.cents || 0), 0),
+  }));
+
+  const serviceMap = new Map();
+  for (const s of staff) {
+    for (const row of s.breakdown) {
+      const cur = serviceMap.get(row.name) || { name: row.name, count: 0, cents: 0 };
+      cur.count += row.count;
+      cur.cents += row.cents;
+      serviceMap.set(row.name, cur);
+    }
+  }
+  const topServices = Array.from(serviceMap.values()).sort((a, b) => b.cents - a.cents).slice(0, 6);
+
+  return { totalCents, totalCount, avgTicketCents, dayTotals, topServices };
 }
 
 export default function FinanceiroPage() {
@@ -17,6 +46,8 @@ export default function FinanceiroPage() {
   useEffect(() => {
     fetch('/api/admin/financeiro').then((r) => r.json()).then(setData);
   }, []);
+
+  const agg = useMemo(() => (data ? aggregate(data.staff) : null), [data]);
 
   return (
     <AdminAppShell>
@@ -30,19 +61,75 @@ export default function FinanceiroPage() {
           </h1>
         </div>
 
-        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'var(--text-muted)',
-          background: 'var(--surface-alt)', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-sm)', padding: '12px 16px' }}>
-          Considera só atendimentos já realizados (data de hoje pra trás). Os que ainda vão acontecer nesta semana entram assim que a data passar.
-        </div>
-
-        {!data ? (
+        {!data || !agg ? (
           <p style={{ color: 'var(--text-muted)' }}>Carregando…</p>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: m ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-              {data.staff.map((s) => (
-                <StaffCard key={s.staffPhone} s={s} />
-              ))}
+            <div style={{ borderRadius: 'var(--radius-lg)', background: 'var(--surface-inverse)', color: 'var(--text-on-inverse)',
+              padding: m ? '22px 20px' : '30px 34px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.14em',
+                textTransform: 'uppercase', color: 'rgba(250,247,243,.6)' }}>Faturamento da semana</span>
+              <span style={{ fontFamily: 'var(--font-serif-display)', fontWeight: 300, fontSize: m ? '2.4rem' : '3rem', lineHeight: 1 }}>
+                {centsToLabel(agg.totalCents)}
+              </span>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.8125rem', color: 'rgba(250,247,243,.75)' }}>
+                {agg.totalCount} atendimento{agg.totalCount === 1 ? '' : 's'} realizado{agg.totalCount === 1 ? '' : 's'}
+              </span>
+
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', height: '56px', marginTop: '6px' }}>
+                {(() => {
+                  const maxCents = Math.max(1, ...agg.dayTotals.map((d) => d.cents));
+                  return agg.dayTotals.map((d) => {
+                    const weekday = parseISO(d.date).getDay();
+                    return (
+                      <div key={d.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                        <div style={{ width: '100%', height: '44px', background: 'rgba(250,247,243,.12)', borderRadius: '4px 4px 2px 2px', position: 'relative' }}>
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, borderRadius: '4px 4px 2px 2px',
+                            height: `${Math.max(4, Math.round((d.cents / maxCents) * 100))}%`,
+                            background: d.cents > 0 ? 'var(--champagne-500)' : 'transparent' }} />
+                        </div>
+                        <span style={{ fontSize: '9px', color: 'rgba(250,247,243,.55)' }}>{WEEKDAY_LABELS[weekday].charAt(0).toUpperCase()}</span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <MetricTile icon="calendar-days" value={agg.totalCount} label="Atendimentos" />
+              <MetricTile icon="receipt" value={centsToLabel(agg.avgTicketCents)} label="Ticket médio" />
+            </div>
+
+            {agg.topServices.length > 0 && (
+              <div>
+                <span style={{ display: 'block', marginBottom: '10px', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700,
+                  letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Serviços mais realizados</span>
+                <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid var(--border-hairline)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                  {agg.topServices.map((row, i) => (
+                    <div key={row.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+                      padding: '13px 16px', background: 'var(--surface-card)', borderTop: i === 0 ? 'none' : '1px solid var(--border-hairline)' }}>
+                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--ink-900)', minWidth: 0,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {row.name} <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>· {row.count}x</span>
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '0.875rem', color: 'var(--ink-900)', flexShrink: 0 }}>
+                        {centsToLabel(row.cents)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <span style={{ display: 'block', marginBottom: '10px', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700,
+                letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Por profissional</span>
+              <div style={{ display: 'grid', gridTemplateColumns: m ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                {data.staff.map((s) => (
+                  <StaffCard key={s.staffPhone} s={s} />
+                ))}
+              </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap',
@@ -57,17 +144,36 @@ export default function FinanceiroPage() {
   );
 }
 
+function MetricTile({ icon, value, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px',
+      borderRadius: 'var(--radius-md)', background: 'var(--surface-card)', border: '1px solid var(--border-hairline)' }}>
+      <span style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'var(--nude-300)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--champagne-600)' }}>
+        <Icon name={icon} size={16} />
+      </span>
+      <div style={{ minWidth: 0 }}>
+        <span style={{ display: 'block', fontFamily: 'var(--font-serif-display)', fontSize: '1.3125rem', lineHeight: 1.1, color: 'var(--ink-900)' }}>{value}</span>
+        <span style={{ display: 'block', marginTop: '2px', fontFamily: 'var(--font-sans)', fontSize: '0.6875rem', color: 'var(--ink-500)' }}>{label}</span>
+      </div>
+    </div>
+  );
+}
+
 function StaffCard({ s }) {
   const maxCents = Math.max(1, ...s.days.map((d) => d.cents));
   return (
     <div style={{ border: '1px solid var(--border-hairline)', borderTop: `3px solid ${s.accent}`, borderRadius: 'var(--radius-md)',
       background: 'var(--surface-card)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: s.accent }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+        <span style={{ width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0, background: s.soft, color: s.accent,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-serif-display)', fontSize: '0.8125rem' }}>
+          {(s.staffName || '?').charAt(0).toUpperCase()}
+        </span>
         <h3 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontSize: '1.1rem', color: 'var(--text-heading)' }}>{s.staffName}</h3>
       </div>
 
-      <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '2rem', fontWeight: 600, color: 'var(--text-heading)' }}>{centsToLabel(s.realizedCents)}</span>
+      <span style={{ fontFamily: 'var(--font-serif-display)', fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-heading)' }}>{centsToLabel(s.realizedCents)}</span>
       <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
         {s.realizedCount} atendimento{s.realizedCount === 1 ? '' : 's'} realizado{s.realizedCount === 1 ? '' : 's'}
       </span>

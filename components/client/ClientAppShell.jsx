@@ -21,21 +21,28 @@ export function ClientAppShell({ children, greeting }) {
       <div style={{ maxWidth: '430px', margin: '0 auto', minHeight: '100vh', background: 'var(--surface-page)',
         position: 'relative', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
         <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(250,247,243,.94)', backdropFilter: 'blur(10px)',
-          padding: greeting ? '12px 14px 12px 18px' : '0 14px 0 18px', height: greeting ? undefined : '52px',
-          display: 'flex', flexDirection: 'column', gap: '10px', justifyContent: 'center' }}>
+          padding: greeting ? '16px 14px 18px 18px' : '0 14px 0 18px', height: greeting ? undefined : '52px',
+          display: 'flex', flexDirection: 'column', gap: '14px', justifyContent: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Link href="/" style={{ border: 0 }}>
               <Logo size={0.36} align="left" descriptor={false} />
             </Link>
-            <IconButton label="Falar no WhatsApp" variant="bare" size={34} onClick={() => window.open(SITE.whatsappHref, '_blank')}>
+            <IconButton label="Falar no WhatsApp" variant="bare" size={38} onClick={() => window.open(SITE.whatsappHref, '_blank')}
+              style={{ background: 'var(--surface-card)', border: '1px solid var(--border-hairline)' }}>
               <Icon name="message-circle" size={16} />
             </IconButton>
           </div>
           {greeting && (
-            <h1 style={{ margin: 0, fontFamily: 'var(--font-serif-display)', fontWeight: 400, fontSize: '1.1875rem',
-              lineHeight: 1.25, color: 'var(--ink-900)' }}>
-              {greeting.title} <span style={{ color: 'var(--ink-500)', fontSize: '0.85em' }}>{greeting.subtitle}</span>
-            </h1>
+            <div>
+              <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-serif-display)',
+                fontWeight: 400, fontSize: '1.5rem', lineHeight: 1.2, color: 'var(--ink-900)' }}>
+                {greeting.title}
+                <Icon name="heart" size={17} color="var(--rose-500)" />
+              </h1>
+              <p style={{ margin: '4px 0 0', fontFamily: 'var(--font-sans)', fontSize: '0.875rem', color: 'var(--ink-500)' }}>
+                {greeting.subtitle}
+              </p>
+            </div>
           )}
         </header>
         {children}
