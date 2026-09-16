@@ -69,10 +69,18 @@ confirmed by the studio**:
 
 ## WhatsApp automation
 
-Sending happens **outside this app**, in a separate agent project that talks
-to a self-hosted Evolution API instance (not reachable from Vercel, so this
-site can't call it directly). This app only exposes what needs sending and
-lets that agent report back what went out:
+Sending happens **outside this app**, in a separate agent project
+(`whatsapp-agent-bellmiranda`, sibling repo) that talks to a self-hosted
+[WAHA](https://waha.devlike.pro/) instance (not reachable from Vercel, so
+this site can't call it directly). This app only exposes what needs sending
+and lets that agent report back what went out.
+
+That agent runs as a Windows Scheduled Task (`AgenteWhatsApp-BellMiranda`)
+polling this site once a minute, and sends through WAHA at
+`http://localhost:3030` — WAHA itself runs in Docker on that same machine.
+Practical implication: the site and its Vercel Cron jobs work regardless of
+Docker; actual WhatsApp delivery does not — if Docker/WAHA is down, sends
+fail and retry on the next poll (see `agent.log` in that repo).
 
 | Endpoint | Auth | Purpose |
 | --- | --- | --- |
