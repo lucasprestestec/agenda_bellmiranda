@@ -34,6 +34,8 @@ export function Footer() {
           alignItems: m ? 'flex-start' : 'center', gap: '20px' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: m ? '18px' : '28px', flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-caption)', color: 'var(--taupe-500)' }}>© 2026 Bell Miranda · Nail Designer</span>
+            <Link href="/politica-de-privacidade" style={{ border: 0, fontFamily: 'var(--font-sans)', fontSize: 'var(--text-caption)',
+              letterSpacing: '0.08em', color: 'var(--taupe-500)', opacity: 0.8 }}>Política de Privacidade</Link>
             <Link href="/admin" style={{ border: 0, fontFamily: 'var(--font-sans)', fontSize: 'var(--text-caption)',
               letterSpacing: '0.08em', color: 'var(--taupe-500)', opacity: 0.8 }}>Área administrativa</Link>
           </span>
