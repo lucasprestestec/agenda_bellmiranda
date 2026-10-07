@@ -9,6 +9,8 @@ export const metadata = {
 };
 
 const UPDATED_AT = '7 de outubro de 2026';
+const PRIVACY_EMAIL = 'eu@lucasprestes.com';
+const PRIVACY_WHATSAPP = '(15) 99146-2230';
 
 const SECTIONS = [
   {
@@ -48,7 +50,7 @@ const SECTIONS = [
   {
     title: 'Mensagens por WhatsApp e a Meta',
     body: [
-      'As mensagens automáticas (confirmação, lembrete, cancelamento e remarcação) são enviadas por WhatsApp, serviço da Meta Platforms, Inc. Elas contêm o seu nome, o serviço, a data e o horário. O envio parte de uma automação própria do estúdio, ligada ao número de WhatsApp do estúdio. O estúdio também está integrando a WhatsApp Business Platform, a API oficial da Meta, para esse mesmo fim.',
+      'As mensagens automáticas (confirmação, lembrete, cancelamento e remarcação) são enviadas pela WhatsApp Business Platform, a API oficial da Meta Platforms, Inc., a partir do número de WhatsApp do estúdio. Elas contêm o seu nome, o serviço, a data e o horário.',
       'Ao passar pelo WhatsApp, as mensagens também ficam sujeitas à política de privacidade da Meta e do WhatsApp, que o estúdio não controla: https://www.whatsapp.com/legal/privacy-policy',
       'A profissional que fará o seu atendimento recebe uma cópia interna por WhatsApp com seu nome, telefone, serviço, data e horário, e a equipe recebe um resumo diário dos atendimentos do dia.',
     ],
@@ -79,7 +81,7 @@ const SECTIONS = [
   {
     title: 'Fale com a gente sobre privacidade',
     body: [
-      `Para qualquer pedido sobre seus dados, chame o estúdio no WhatsApp ${SITE.whatsappDisplay} ou escreva para ${SITE.email}. Para sua segurança, podemos pedir que você confirme o nome e o número usados no agendamento. Respondemos em até 15 dias.`,
+      `Para qualquer pedido sobre seus dados, escreva para ${PRIVACY_EMAIL} ou chame no WhatsApp ${PRIVACY_WHATSAPP}. Para sua segurança, podemos pedir que você confirme o nome e o número usados no agendamento. Respondemos em até 15 dias.`,
     ],
   },
   {
